@@ -10,7 +10,7 @@ int main(int argc, char **argv)
     char fs_path[255];
 
     if (argc < 2) {
-        printf("Using default filesystem path\n");
+        printf("Using default filesystem path: %s\n", DEFAULT_FS_PATH);
         strcpy(fs_path, DEFAULT_FS_PATH);
     } else {
         strcpy(fs_path, argv[1]);
