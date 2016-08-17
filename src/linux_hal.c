@@ -31,12 +31,33 @@ int linux_release_image(void)
 
 int linux_read(uint8_t *buffer, uint32_t length)
 {
-    printf("linux_read: not implemented\n");
-    return -1;
+    if (buffer == NULL) {
+        printf("linux_read: Cannot read with null buffer\n");
+        return -1;
+    }
+
+    if (length == 0)
+        return 0;
+
+    if (fread(buffer, sizeof(uint8_t), length, image) != length) {
+        printf("linux_read: Error while reading %u bytes\n", length);
+        return -1;
+    }
+
+    return 0;
 }
 
 int linux_read_byte(uint8_t *data)
 {
-    printf("linux_read_byte: not implemented\n");
-    return -1;
+    if (data == NULL) {
+        printf("linux_read: Cannot read with null buffer\n");
+        return -1;
+    }
+
+    if (fread(data, 1, 1, image) != 1) {
+        printf("linux_read: Error while reading one byte\n");
+        return -1;
+    }
+
+    return 0;
 }
