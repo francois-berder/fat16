@@ -2,12 +2,14 @@
 #include <stdlib.h>
 #include <string.h>
 #include "linux_hal.h"
+#include "fat16.h"
 
 #define DEFAULT_FS_PATH     "data/fs.img"
 
 
 int main(int argc, char **argv)
 {
+    int ret;
     char fs_path[255];
 
     if (argc < 2) {
@@ -22,9 +24,9 @@ int main(int argc, char **argv)
         return -1;
     printf("%s filesystem loaded.\n", fs_path);
 
-
     // FAT16 operations
-
+    ret = fat16_init();
+    printf("ret: %d\n", ret);
 
     // Release filesystem image
     if (linux_release_image() < 0)
