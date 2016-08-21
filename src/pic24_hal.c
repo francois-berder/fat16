@@ -14,3 +14,8 @@ int pic24_read_byte(uint8_t *data)
     return -1;
 }
 
+int pic24_seek(int offset)
+{
+    printf("pic24_seek: Not implemented\n");
+    return -1;
+}

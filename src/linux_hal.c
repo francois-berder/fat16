@@ -61,3 +61,8 @@ int linux_read_byte(uint8_t *data)
 
     return 0;
 }
+
+int linux_seek(int offset)
+{
+    return fseek(image, offset, SEEK_SET);
+}

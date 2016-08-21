@@ -23,3 +23,14 @@ int hal_read_byte(uint8_t *data)
     return -1;
 #endif
 }
+
+int hal_seek(int offset)
+{
+#ifdef PLATFORM_LINUX
+    return linux_seek(offset);
+#elif defined PLATFORM_PIC24
+    return pic24_seek(offset);
+#else
+    return -1;
+#endif
+}
