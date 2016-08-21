@@ -3,8 +3,11 @@
 #include "fat16.h"
 #include "hal.h"
 
+#ifndef NDEBUG
+#define LOG(...)        printf(__VA_ARGS__)
+#else
 #define LOG(...)
-
+#endif
 
 static struct fat16_bpb bpb;
 
@@ -15,7 +18,7 @@ static int fat16_read_bpb(void)
     memset(&bpb, 0, sizeof(struct fat16_bpb));
 
     /* Parse boot sector */
-    printf("#######   BPB   #######\n");
+    LOG("#######   BPB   #######\n");
     /* jump instruction on 3 bytes.
      * Either: 0xEB,0x??, 0x90
      * or: 0xE9,0x??,0x??
@@ -34,9 +37,9 @@ static int fat16_read_bpb(void)
     }
 
     hal_read((uint8_t*)&bpb.oem_name, 8);
-    printf("OEM NAME: %s\n", bpb.oem_name);
+    LOG("OEM NAME: %s\n", bpb.oem_name);
     hal_read((uint8_t*)&bpb.bytes_per_sector, 2);
-    printf("bytes per sector: %u\n", bpb.bytes_per_sector);
+    LOG("bytes per sector: %u\n", bpb.bytes_per_sector);
     if (bpb.bytes_per_sector != 512
     &&  bpb.bytes_per_sector != 1024
     &&  bpb.bytes_per_sector != 2048
@@ -44,7 +47,7 @@ static int fat16_read_bpb(void)
         return -INVALID_BYTES_PER_SECTOR;
 
     hal_read(&bpb.sectors_per_cluster, 1);
-    printf("sectors per cluster: %u\n", bpb.sectors_per_cluster);
+    LOG("sectors per cluster: %u\n", bpb.sectors_per_cluster);
     if (bpb.sectors_per_cluster != 1
     &&  bpb.sectors_per_cluster != 2
     &&  bpb.sectors_per_cluster != 4
@@ -59,15 +62,15 @@ static int fat16_read_bpb(void)
         return -INVALID_BYTES_PER_CLUSTER;
 
     hal_read((uint8_t*)&bpb.reversed_sector_count, 2);
-    printf("reserved sector count: %u\n", bpb.reversed_sector_count);
+    LOG("reserved sector count: %u\n", bpb.reversed_sector_count);
     if (bpb.reversed_sector_count != 1)
         return -INVALID_RESERVED_SECTOR_COUNT;
 
     hal_read(&bpb.num_fats, 1);
-    printf("num fats: %u\n", bpb.num_fats);
+    LOG("num fats: %u\n", bpb.num_fats);
 
     hal_read((uint8_t*)&bpb.root_entry_count, 2);
-    printf("root entry count: %u\n", bpb.root_entry_count);
+    LOG("root entry count: %u\n", bpb.root_entry_count);
     if (((32 * bpb.root_entry_count) / bpb.bytes_per_sector) & 0x1 != 0)
         return -INVALID_ROOT_ENTRY_COUNT;
 
@@ -78,7 +81,7 @@ static int fat16_read_bpb(void)
     hal_read_byte(&data);
 
     hal_read((uint8_t*)&bpb.fat_size, 2);
-    printf("fat size: %u\n", bpb.fat_size);
+    LOG("fat size: %u\n", bpb.fat_size);
 
     /* Skip sector per track for int 0x13 */
     hal_read_byte(&data);
@@ -102,7 +105,7 @@ static int fat16_read_bpb(void)
 
     if (bpb.sector_count == 0)
         bpb.sector_count = sector_count_32b;
-    printf("sector count: %u\n", bpb.sector_count);
+    LOG("sector count: %u\n", bpb.sector_count);
 
     /* Skip drive number */
     hal_read_byte(&data);
@@ -113,13 +116,13 @@ static int fat16_read_bpb(void)
     hal_read_byte(&data);
     if (data == 0x29) {
         hal_read((uint8_t*)&bpb.volume_id, 4);
-        printf("volume ID: %u\n", bpb.volume_id);
+        LOG("volume ID: %u\n", bpb.volume_id);
 
         hal_read((uint8_t*)&bpb.label, 11);
-        printf("label: %s\n", bpb.label);
+        LOG("label: %s\n", bpb.label);
 
         hal_read((uint8_t*)bpb.fs_type, 8);
-        printf("fs type: %s\n", bpb.fs_type);
+        LOG("fs type: %s\n", bpb.fs_type);
     }
 
     return 0;
