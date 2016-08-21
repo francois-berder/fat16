@@ -146,5 +146,10 @@ int fat16_init(void)
     data_cluster_count = data_sector_count / bpb.sectors_per_cluster;
     LOG("data cluster count: %u\n", data_cluster_count);
 
+
+    if (data_cluster_count < 4085
+    ||  data_cluster_count >= 65525)
+        return -INVALID_FAT_TYPE;
+
     return 0;
 }
