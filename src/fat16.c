@@ -72,7 +72,7 @@ static int fat16_read_bpb(void)
 
     hal_read((uint8_t*)&bpb.root_entry_count, 2);
     LOG("root entry count: %u\n", bpb.root_entry_count);
-    if (((32 * bpb.root_entry_count) / bpb.bytes_per_sector) & 0x1 != 0)
+    if ((((32 * bpb.root_entry_count) / bpb.bytes_per_sector) & 0x1) != 0)
         return -INVALID_ROOT_ENTRY_COUNT;
 
     hal_read((uint8_t*)&bpb.sector_count, 2);
