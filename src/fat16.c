@@ -131,7 +131,7 @@ static int fat16_read_bpb(void)
 
 int fat16_init(void)
 {
-    uint32_t data_sector_count;
+    uint32_t data_sector_count, data_cluster_count;
     int ret = fat16_read_bpb();
     if (ret < 0)
         return ret;
@@ -142,6 +142,9 @@ int fat16_init(void)
     /* Find number of sectors in data region */
     data_sector_count = bpb.sector_count - (bpb.reversed_sector_count + (bpb.num_fats * bpb.fat_size) + root_directory_sector_count);
     LOG("data sector count: %u\n", data_sector_count);
+
+    data_cluster_count = data_sector_count / bpb.sectors_per_cluster;
+    LOG("data cluster count: %u\n", data_cluster_count);
 
     return 0;
 }
