@@ -131,12 +131,17 @@ static int fat16_read_bpb(void)
 
 int fat16_init(void)
 {
+    uint32_t data_sector_count;
     int ret = fat16_read_bpb();
     if (ret < 0)
         return ret;
 
     root_directory_sector_count = ((bpb.root_entry_count * 32) + (bpb.bytes_per_sector - 1)) / bpb.bytes_per_sector;
     LOG("root directory sector count: %u\n", root_directory_sector_count);
+
+    /* Find number of sectors in data region */
+    data_sector_count = bpb.sector_count - (bpb.reversed_sector_count + (bpb.num_fats * bpb.fat_size) + root_directory_sector_count);
+    LOG("data sector count: %u\n", data_sector_count);
 
     return 0;
 }
