@@ -10,6 +10,7 @@
 #endif
 
 static struct fat16_bpb bpb;
+static uint32_t root_directory_sector_count;
 
 static int fat16_read_bpb(void)
 {
@@ -130,5 +131,12 @@ static int fat16_read_bpb(void)
 
 int fat16_init(void)
 {
-    return fat16_read_bpb();
+    int ret = fat16_read_bpb();
+    if (ret < 0)
+        return ret;
+
+    root_directory_sector_count = ((bpb.root_entry_count * 32) + (bpb.bytes_per_sector - 1)) / bpb.bytes_per_sector;
+    LOG("root directory sector count: %u\n", root_directory_sector_count);
+
+    return 0;
 }
