@@ -30,6 +30,26 @@ struct fat16_bpb {
     char fs_type[8];
 };
 
+struct dir_entry {
+    char filename[11];
+    uint8_t attribute;
+    uint8_t reserved[10];
+    uint8_t time[2];
+    uint8_t date[2];
+    uint16_t starting_cluster;
+    uint32_t size;
+};
+
+enum FILE_ATTRIBUTE
+{
+    READ_ONLY   = 0x01,
+    HIDDEN      = 0x02,
+    SYSTEM      = 0x04,
+    VOLUME      = 0x08,
+    SUBDIR      = 0x10,
+    ARCHIVE     = 0x20
+};
+
 int fat16_init(void);
 
 #endif

@@ -129,6 +129,27 @@ static int fat16_read_bpb(void)
     return 0;
 }
 
+static void dump_root_entry(struct dir_entry e)
+{
+    printf("filename: %s\n", e.filename);
+    printf("attribute: ");
+    if (e.attribute & READ_ONLY)
+        printf("read-only ");
+    if (e.attribute & HIDDEN)
+        printf("hidden ");
+    if (e.attribute & SYSTEM)
+        printf("system ");
+    if (e.attribute & VOLUME)
+        printf("volume ");
+    if (e.attribute & SUBDIR)
+        printf("subdir ");
+    if (e.attribute & ARCHIVE)
+        printf("archive ");
+    printf("\n");
+    printf("starting cluster: %u\n", e.starting_cluster);
+    printf("size: %u\n", e.size);
+}
+
 int fat16_init(void)
 {
     uint32_t data_sector_count, data_cluster_count;
