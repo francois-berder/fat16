@@ -24,7 +24,7 @@ struct fat16_bpb {
     uint8_t num_fats;
     uint16_t root_entry_count;
     uint32_t sector_count;
-    uint16_t fat_size;
+    uint16_t fat_size; /* in sectors */
     uint32_t volume_id;
     char label[11];
     char fs_type[8];
@@ -51,5 +51,22 @@ enum FILE_ATTRIBUTE
 };
 
 int fat16_init(void);
+
+/**
+ * @brief Open a file.
+ *
+ * No sub directories are supported, so the path is a slash followed by the
+ * name of a file.
+ * A file can be opened multiple times for reading. But, it can be opened only
+ * once at a time for writing.
+ *
+ * @param[in] path Path to a file
+ * @param[in] mode Can be 'r' or 'w'
+ * @return A handle of the file (positive integer) if it could open it.
+ * Otherwise, a negative value is returned.
+ */
+int fat16_open(char *filename, char mode);
+
+int fat16_read(uint8_t handle, char *buffer, uint32_t count);
 
 #endif

@@ -1,5 +1,7 @@
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
+#include <ctype.h>
 #include "fat16.h"
 #include "hal.h"
 
@@ -9,8 +11,25 @@
 #define LOG(...)
 #endif
 
+#define INVALID_HANDLE  (255)
+#define HANDLE_COUNT    (16)        /* Must not be greater than 254 */
+#define READ_MODE       (true)
+#define WRITE_MODE      (false)
+
+#define INDEX_FIRST_CLUSTER     (2)
+
 static struct fat16_bpb bpb;
 static uint32_t root_directory_sector_count;
+static struct {
+    char filename[11];      /* If handle is not used, filename[0] == 0 */
+    bool read_mode;         /* True if reading from file, false if writing to file */
+    uint16_t cluster;       /* Current cluster reading/writing */
+    uint16_t offset;        /* Offset in bytes in cluster */
+    uint32_t remaining_bytes;   /* Remaining bytes to be read in bytes in the file, only used in read mode */
+} handles[HANDLE_COUNT];
+
+static uint32_t start_fat_region;       /* offset in bytes of first FAT */
+static uint32_t start_data_region;      /* offset in bytes of data region */
 
 static int fat16_read_bpb(void)
 {
@@ -129,25 +148,152 @@ static int fat16_read_bpb(void)
     return 0;
 }
 
+/**
+ * @brief Convert filename to 8.3 short FAT name.
+ *
+ * Example "hello.txt" to "HELLO   TXT"
+ *
+ * @param[out] fat_filename 11 long char array
+ * @param[in] filename arbitrary long string
+ * @return 0 if successful, -1 otherwise
+ */
+static int make_fat_filename(char *fat_filename, char *filename)
+{
+    uint8_t i = 0;
+    uint8_t sep;
+
+    /* Find position of . (marker between name and extension) */
+    for (i = 0; i < 9; ++i) {
+        if (filename[i] == '\0')
+            return -1;
+        if (filename[i] == '.') {
+            sep = i;
+            break;
+        }
+    }
+
+    /* If it cannot find . in the first 9 characters then the name is more
+     * than 8 characters long which is forbidden. */
+    if (i == 9)
+        return -1;
+
+    /* Copy name */
+    for (i = 0; i < sep; ++i)
+        fat_filename[i] = toupper(filename[i]);
+
+    memset(&fat_filename[sep], ' ', 8 - sep);
+
+    /* Copy extension */
+    for (i = 0; i < 3; ++i) {
+        if (filename[i] == '\0')
+            return -1;
+        fat_filename[8+i] = toupper(filename[sep+1+i]);
+    }
+
+#ifndef NDEBUG
+    for(i = 0; i < 11; ++i)
+        printf("%c", fat_filename[i]);
+    printf("\n");
+#endif
+    return 0;
+}
+
 static void dump_root_entry(struct dir_entry e)
 {
-    printf("filename: %s\n", e.filename);
-    printf("attribute: ");
+    LOG("filename: %s\n", e.filename);
+    LOG("attribute: ");
     if (e.attribute & READ_ONLY)
-        printf("read-only ");
+        LOG("read-only ");
     if (e.attribute & HIDDEN)
-        printf("hidden ");
+        LOG("hidden ");
     if (e.attribute & SYSTEM)
-        printf("system ");
+        LOG("system ");
     if (e.attribute & VOLUME)
-        printf("volume ");
+        LOG("volume ");
     if (e.attribute & SUBDIR)
-        printf("subdir ");
+        LOG("subdir ");
     if (e.attribute & ARCHIVE)
-        printf("archive ");
-    printf("\n");
-    printf("starting cluster: %u\n", e.starting_cluster);
-    printf("size: %u\n", e.size);
+        LOG("archive ");
+    LOG("\n");
+    LOG("starting cluster: %u\n", e.starting_cluster);
+    LOG("size: %u\n", e.size);
+}
+
+static bool is_file_opened(char *filename, bool mode)
+{
+    uint8_t i = 0;
+    for (; i < HANDLE_COUNT; ++i) {
+        if (handles[i].filename[0] == 0)
+            continue;
+
+        if (memcmp(filename, handles[i].filename, sizeof(handles[i].filename)) == 0) {
+            if (handles[i].read_mode == mode)
+                return true;
+        }
+    }
+
+    return false;
+}
+
+static uint8_t find_available_handle(void)
+{
+    uint8_t i = 0;
+    for (; i < HANDLE_COUNT; ++i) {
+        if (handles[i].filename[0] == 0)
+            return i;
+    }
+
+    return INVALID_HANDLE;
+}
+
+static int fat16_open_read(uint8_t handle, char *filename)
+{
+    uint16_t i = 0;
+
+    /* Check that it is not opened for writing operations. */
+    if (is_file_opened(filename, WRITE_MODE)) {
+        LOG("Cannot read from file while writing to it.\n");
+        return -1;
+    }
+
+    /* Iterate through all entries of root directory */
+    hal_seek((bpb.num_fats * bpb.fat_size + 1) * bpb.bytes_per_sector);
+    for (i = 0; i < bpb.root_entry_count; ++i) {
+        struct dir_entry e;
+        hal_read((uint8_t*)&e, sizeof(struct dir_entry));
+#ifndef NDEBUG
+        //dump_root_entry(e);
+#endif
+        /* Ignore any VFAT entry */
+        if ((e.attribute & 0x0F) == 0x0F)
+            continue;
+
+        if (memcmp(filename, e.filename, sizeof(e.filename)) == 0) {
+            memcpy(handles[handle].filename, filename, sizeof(handles[handle].filename));
+            handles[handle].read_mode = READ_MODE;
+            printf("starting_cluster=%08X\n", e.starting_cluster);
+            handles[handle].cluster = e.starting_cluster - INDEX_FIRST_CLUSTER;
+            handles[handle].offset = 0;
+            handles[handle].remaining_bytes = e.size;
+            return handle;
+        }
+    }
+
+    LOG("File not found.\n");
+    return -1;
+}
+
+static int fat16_open_write(uint8_t handle, char *filename)
+{
+    /* Check that it is not opened for reading operations. */
+    if (is_file_opened(filename, READ_MODE)) {
+        LOG("Cannot write to file while reading from it.\n");
+        return -1;
+    }
+
+    LOG("Write mode not supported.\n");
+
+    return 0;
 }
 
 int fat16_init(void)
@@ -157,7 +303,7 @@ int fat16_init(void)
     if (ret < 0)
         return ret;
 
-    root_directory_sector_count = ((bpb.root_entry_count * 32) + (bpb.bytes_per_sector - 1)) / bpb.bytes_per_sector;
+    root_directory_sector_count = (bpb.root_entry_count * 32) / bpb.bytes_per_sector;
     LOG("root directory sector count: %u\n", root_directory_sector_count);
 
     /* Find number of sectors in data region */
@@ -167,10 +313,137 @@ int fat16_init(void)
     data_cluster_count = data_sector_count / bpb.sectors_per_cluster;
     LOG("data cluster count: %u\n", data_cluster_count);
 
+    start_fat_region = bpb.reversed_sector_count * bpb.bytes_per_sector;
+    LOG("start_fat_region=%08X\n", start_fat_region);
+    start_data_region = start_fat_region + ((bpb.num_fats * bpb.fat_size) + root_directory_sector_count) * bpb.bytes_per_sector;
+    LOG("start_data_region=%08X\n", start_data_region);
 
     if (data_cluster_count < 4085
     ||  data_cluster_count >= 65525)
         return -INVALID_FAT_TYPE;
 
     return 0;
+}
+
+int fat16_open(char *filename, char mode)
+{
+    char fat_filename[11];
+    uint8_t handle = INVALID_HANDLE;
+
+    if (mode != 'r' && mode != 'w') {
+        LOG("Invalid mode.\n");
+        return -1;
+    }
+
+    if (filename == NULL) {
+        LOG("Cannot open a file with a null path string.\n");
+        return -1;
+    }
+
+    handle = find_available_handle();
+    if (handle == INVALID_HANDLE) {
+        LOG("No available handle found.\n");
+        return -1;
+    }
+
+    if (make_fat_filename(fat_filename, filename) < 0)
+        return -1;
+
+    if (mode == 'r')
+        return fat16_open_read(handle, fat_filename);
+    else
+        return fat16_open_write(handle, fat_filename);
+}
+
+/* Return true if handle is valid, false otherwise */
+static bool check_handle(uint8_t handle)
+{
+    if (handle >= HANDLE_COUNT)
+        return false;
+
+    if (handles[handle].filename == 0)
+        return false;
+
+    return true;
+}
+
+static uint16_t read_fat_entry(uint16_t cluster)
+{
+    uint16_t fat_entry = 0;
+    uint32_t pos = start_fat_region;
+    pos += cluster * 2;
+    hal_seek(pos);
+    hal_read((uint8_t*)&fat_entry, sizeof(fat_entry));
+
+    return fat_entry;
+}
+
+static void move_to_data_region(uint16_t cluster, uint16_t offset)
+{
+    uint32_t pos = start_data_region;
+    pos += (cluster * bpb.sectors_per_cluster) * bpb.bytes_per_sector;
+    pos += offset;
+    hal_seek(pos);
+}
+
+int fat16_read(uint8_t handle, char *buffer, uint32_t count)
+{
+    uint32_t bytes_read_count = 0;
+
+    if (check_handle(handle) == false) {
+        LOG("fat16_read: Invalid handle.\n");
+        return -1;
+    }
+
+    if (handles[handle].read_mode != READ_MODE) {
+        LOG("fat16_read: Cannot read with handle in write mode.\n");
+        return -1;
+    }
+
+    /* Check if we reach end of file */
+    if (handles[handle].remaining_bytes == 0)
+        return -2;
+
+    move_to_data_region(handles[handle].cluster, handles[handle].offset);
+
+    /* Read in chunk until count is 0 or end of file is reached */
+    while (count > 0) {
+        uint32_t chunk_length = count, bytes_remaining_in_cluster = 0;
+
+        /* Check if we reach end of file */
+        if (handles[handle].remaining_bytes == 0)
+            return bytes_read_count;
+
+        /* Check that we read within the boundary of the current cluster */
+        bytes_remaining_in_cluster = bpb.sectors_per_cluster * bpb.bytes_per_sector - handles[handle].offset;
+        if (chunk_length > bytes_remaining_in_cluster)
+            chunk_length = bytes_remaining_in_cluster;
+
+        /* Check that we do not read past the end of file */
+        if (chunk_length > handles[handle].remaining_bytes)
+            chunk_length = handles[handle].remaining_bytes;
+
+        hal_read((uint8_t*)buffer, chunk_length);
+
+        handles[handle].remaining_bytes -= chunk_length;
+        handles[handle].offset += chunk_length;
+        if (handles[handle].offset == bpb.sectors_per_cluster * bpb.bytes_per_sector) {
+            handles[handle].offset = 0;
+
+            /* Look for the next cluster in the FAT, unless we are already reading the last one */
+            if (handles[handle].remaining_bytes != 0) {
+                uint16_t fat_entry = read_fat_entry(handles[handle].cluster - 1);
+                /* TODO: check fat entry */
+
+                handles[handle].cluster = fat_entry;
+
+                move_to_data_region(handles[handle].cluster, handles[handle].offset);
+            }
+        }
+        count -= chunk_length;
+        buffer += chunk_length;
+        bytes_read_count += chunk_length;
+    }
+
+    return bytes_read_count;
 }
