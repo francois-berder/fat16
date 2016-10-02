@@ -29,7 +29,9 @@ static struct {
 } handles[HANDLE_COUNT];
 
 static uint32_t start_fat_region;       /* offset in bytes of first FAT */
+static uint32_t start_root_directory_region;    /* offset in bytes of root directory */
 static uint32_t start_data_region;      /* offset in bytes of data region */
+
 
 static int fat16_read_bpb(void)
 {
@@ -315,7 +317,9 @@ int fat16_init(void)
 
     start_fat_region = bpb.reversed_sector_count * bpb.bytes_per_sector;
     LOG("start_fat_region=%08X\n", start_fat_region);
-    start_data_region = start_fat_region + ((bpb.num_fats * bpb.fat_size) + root_directory_sector_count) * bpb.bytes_per_sector;
+    start_root_directory_region = start_fat_region + (bpb.num_fats * bpb.fat_size) * bpb.bytes_per_sector;
+    LOG("start_root_directory_region=%08X\n", start_root_directory_region);
+    start_data_region = start_root_directory_region + (root_directory_sector_count * bpb.bytes_per_sector);
     LOG("start_data_region=%08X\n", start_data_region);
 
     if (data_cluster_count < 4085
@@ -383,6 +387,23 @@ static void move_to_data_region(uint16_t cluster, uint16_t offset)
     uint32_t pos = start_data_region;
     pos += (cluster * bpb.sectors_per_cluster) * bpb.bytes_per_sector;
     pos += offset;
+    LOG("Moving to %08X\n", pos);
+    hal_seek(pos);
+}
+
+static void move_to_root_directory_region(uint16_t entry_index)
+{
+    uint32_t pos = start_root_directory_region;
+    pos += entry_index * 32;
+    LOG("Moving to %08X\n", pos);
+    hal_seek(pos);
+}
+
+static void move_to_fat_region(uint16_t cluster)
+{
+    uint32_t pos = start_fat_region;
+    pos += (cluster - 1) * 2;
+    LOG("Moving to %08X\n", pos);
     hal_seek(pos);
 }
 
@@ -446,4 +467,69 @@ int fat16_read(uint8_t handle, char *buffer, uint32_t count)
     }
 
     return bytes_read_count;
+}
+
+int fat16_delete(char *filename)
+{
+    char fat_filename[11];
+    uint16_t i = 0;
+
+    if (filename == NULL) {
+        LOG("Cannot open a file with a null path string.\n");
+        return -1;
+    }
+
+    if (make_fat_filename(fat_filename, filename) < 0)
+        return -1;
+
+    if (is_file_opened(fat_filename, READ_MODE)
+    ||  is_file_opened(fat_filename, WRITE_MODE)) {
+        LOG("Cannot delete a file currently opened.\n");
+        return -1;
+    }
+
+    /* Iterate through all entries of root directory */
+    hal_seek((bpb.num_fats * bpb.fat_size + 1) * bpb.bytes_per_sector);
+    for (i = 0; i < bpb.root_entry_count; ++i) {
+        struct dir_entry e;
+        hal_read((uint8_t*)&e, sizeof(struct dir_entry));
+#ifndef NDEBUG
+        //dump_root_entry(e);
+#endif
+        /* Ignore any VFAT entry */
+        if ((e.attribute & 0x0F) == 0x0F)
+            continue;
+
+        if (memcmp(fat_filename, e.filename, sizeof(e.filename)) == 0) {
+            uint16_t cluster = e.starting_cluster - INDEX_FIRST_CLUSTER;
+            uint8_t j = 0;
+            /* Overwrite the entry in the root directory */
+            move_to_root_directory_region(i);
+            for (j = 0; j < 32; ++j) {
+                uint8_t tmp = 0;
+                hal_write(&tmp, sizeof(tmp));
+            }
+
+            /* Mark all clusters in the FAT as available */
+            do {
+                uint16_t free_cluster = 0;
+                uint16_t next_cluster;
+                move_to_fat_region(cluster);
+                hal_read((uint8_t*)&next_cluster, sizeof(next_cluster));
+
+                move_to_fat_region(cluster);
+
+                hal_write((uint8_t*)&free_cluster, sizeof(free_cluster));
+
+                if (next_cluster >= 0xFFF8)
+                    break;
+                cluster = next_cluster;
+            } while(1);
+
+            return 0;
+        }
+    }
+
+    LOG("File not found.\n");
+    return -1;
 }

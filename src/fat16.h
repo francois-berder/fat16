@@ -69,4 +69,6 @@ int fat16_open(char *filename, char mode);
 
 int fat16_read(uint8_t handle, char *buffer, uint32_t count);
 
+int fat16_delete(char *filename);
+
 #endif
