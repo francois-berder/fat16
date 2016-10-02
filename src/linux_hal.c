@@ -10,7 +10,7 @@ int linux_load_image(char *path)
         return -1;
     }
 
-    if ((image = fopen(path, "rb")) == NULL) {
+    if ((image = fopen(path, "r+")) == NULL) {
         printf("linux_load_image: Could not load file %s\n", path);
         return -1;
     }
@@ -66,3 +66,22 @@ int linux_seek(int offset)
 {
     return fseek(image, offset, SEEK_SET);
 }
+
+int linux_write(uint8_t *buffer, uint32_t length)
+{
+    if (buffer == NULL) {
+        printf("linux_write: Cannot write with null buffer\n");
+        return -1;
+    }
+
+    if (length == 0)
+        return 0;
+
+    if (fwrite(buffer, sizeof(uint8_t), length, image) != length) {
+        printf("linux_write: Error while writing %u bytes\n", length);
+        return -1;
+    }
+
+    return fflush(image);
+}
+

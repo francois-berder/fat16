@@ -34,3 +34,14 @@ int hal_seek(int offset)
     return -1;
 #endif
 }
+
+int hal_write(uint8_t *buffer, uint32_t length)
+{
+#ifdef PLATFORM_LINUX
+    return linux_write(buffer, length);
+#elif defined PLATFORM_PIC24
+    return pic24_write(buffer, length);
+#else
+    return -1;
+#endif
+}

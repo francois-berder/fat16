@@ -19,3 +19,9 @@ int pic24_seek(int offset)
     printf("pic24_seek: Not implemented\n");
     return -1;
 }
+
+int pic24_write(uint8_t *buffer, uint32_t length)
+{
+    printf("pic24_write: Not implemented\n");
+    return -1;
+}
