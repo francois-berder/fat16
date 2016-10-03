@@ -30,7 +30,7 @@ struct fat16_bpb {
     uint32_t volume_id;
     char label[11];
     char fs_type[8];
-};
+} bpb;
 
 struct dir_entry {
     char filename[11];
@@ -52,8 +52,6 @@ enum FILE_ATTRIBUTE
     ARCHIVE     = 0x20
 };
 
-static struct fat16_bpb bpb;
-static uint32_t root_directory_sector_count;
 static struct {
     char filename[11];      /* If handle is not used, filename[0] == 0 */
     bool read_mode;         /* True if reading from file, false if writing to file */
@@ -416,7 +414,7 @@ static int fat16_open_write(uint8_t handle, char *filename)
 
 int fat16_init(void)
 {
-    uint32_t data_sector_count, data_cluster_count;
+    uint32_t data_sector_count, data_cluster_count, root_directory_sector_count;
     int ret = fat16_read_bpb();
     if (ret < 0)
         return ret;
