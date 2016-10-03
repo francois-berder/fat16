@@ -18,6 +18,9 @@
 
 #define FIRST_CLUSTER_INDEX_IN_FAT     (3)
 
+#define ROOT_DIR_VFAT_ENTRY             (0x0F)
+#define ROOT_DIR_AVAILABLE_ENTRY        (0xE5)
+
 struct fat16_bpb {
     char oem_name[8];
     uint16_t bytes_per_sector;
@@ -343,7 +346,7 @@ static int find_root_directory_entry(char *filename)
 #endif
 
         /* Skip available entry */
-        if ((uint8_t)(e.filename[0]) == 0xE5)
+        if ((uint8_t)(e.filename[0]) == ROOT_DIR_AVAILABLE_ENTRY)
             continue;
 
         /* Check if we reach end of list of root directory entries */
@@ -353,7 +356,7 @@ static int find_root_directory_entry(char *filename)
         }
 
         /* Ignore any VFAT entry */
-        if ((e.attribute & 0x0F) == 0x0F)
+        if ((e.attribute & ROOT_DIR_VFAT_ENTRY) == ROOT_DIR_VFAT_ENTRY)
             continue;
 
         if (memcmp(filename, e.filename, sizeof(e.filename)) == 0)
@@ -662,7 +665,7 @@ int fat16_delete(char *filename)
      * written.
      */
     if (!last_entry_in_root_directory(entry_index))
-        entry_marker = 0xE5;
+        entry_marker = ROOT_DIR_AVAILABLE_ENTRY;
     move_to_root_directory_region(entry_index);
     hal_write(&entry_marker, sizeof(entry_marker));
 
