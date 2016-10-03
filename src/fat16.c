@@ -289,6 +289,11 @@ static void move_to_data_region(uint16_t cluster, uint16_t offset)
     hal_seek(pos);
 }
 
+/**
+ * @brief Move cursor to an entry in the root directory.
+ *
+ * @param[in] entry_index Index of the entry, must not be greater than bpb.root_entry_count
+ */
 static void move_to_root_directory_region(uint16_t entry_index)
 {
     uint32_t pos = start_root_directory_region;
@@ -297,7 +302,8 @@ static void move_to_root_directory_region(uint16_t entry_index)
     hal_seek(pos);
 }
 
-/* @brief Move cursor to a location in the first FAT.
+/**
+ * @brief Move cursor to a location in the first FAT.
  *
  * @param[in] cluster Cluster index - 2.
  */
@@ -309,7 +315,9 @@ static void move_to_fat_region(uint16_t cluster)
     hal_seek(pos);
 }
 
-/*
+/**
+ * @brief Find the index of an entry based on its name.
+ *
  * @param[in] filename name of the file in 8.3 format
  * @return -1 if it cannot find the entry, otherwise give the index (positive number)
  */
@@ -347,7 +355,8 @@ static int find_root_directory_entry(char *filename)
 }
 
 
-/* @brief Create a handle for reading a file.
+/**
+ * @brief Create a handle for reading a file.
  *
  * @param[in] handle Index to an available handle
  * @param[in] filename Name of the file in 8.3 format
