@@ -16,7 +16,7 @@
 #define READ_MODE       (true)
 #define WRITE_MODE      (false)
 
-#define INDEX_FIRST_CLUSTER     (2)
+#define FIRST_CLUSTER_INDEX_IN_FAT     (3)
 
 struct fat16_bpb {
     char oem_name[8];
@@ -280,10 +280,16 @@ static uint8_t find_available_handle(void)
     return INVALID_HANDLE;
 }
 
+/**
+ * @brief Move cursor to a specific byte in data region.
+ *
+ * @param[in] cluster Index of the cluster
+ * @param[in] offset Offset in bytes from the start of the cluster.
+ */
 static void move_to_data_region(uint16_t cluster, uint16_t offset)
 {
     uint32_t pos = start_data_region;
-    pos += (cluster * bpb.sectors_per_cluster) * bpb.bytes_per_sector;
+    pos += ((cluster - 2) * bpb.sectors_per_cluster) * bpb.bytes_per_sector;
     pos += offset;
     LOG("Moving to %08X\n", pos);
     hal_seek(pos);
@@ -305,12 +311,16 @@ static void move_to_root_directory_region(uint16_t entry_index)
 /**
  * @brief Move cursor to a location in the first FAT.
  *
- * @param[in] cluster Cluster index - 2.
+ * @param[in] cluster Index of the cluster.
  */
 static void move_to_fat_region(uint16_t cluster)
 {
     uint32_t pos = start_fat_region;
-    pos += (cluster - 1) * 2;
+
+    /* Remove 3 from cluster index because cluster 0 to 2 are reserved
+     * and are not represented in the FAT.
+     */
+    pos += (cluster - FIRST_CLUSTER_INDEX_IN_FAT) * 2;
     LOG("Moving to %08X\n", pos);
     hal_seek(pos);
 }
@@ -383,7 +393,7 @@ static int fat16_open_read(uint8_t handle, char *filename)
     /* Create handle */
     memcpy(handles[handle].filename, filename, sizeof(handles[handle].filename));
     handles[handle].read_mode = READ_MODE;
-    handles[handle].cluster = entry.starting_cluster - INDEX_FIRST_CLUSTER;
+    handles[handle].cluster = entry.starting_cluster;
     handles[handle].offset = 0;
     handles[handle].remaining_bytes = entry.size;
 
@@ -496,9 +506,7 @@ static bool check_handle(uint8_t handle)
 static uint16_t read_fat_entry(uint16_t cluster)
 {
     uint16_t fat_entry = 0;
-    uint32_t pos = start_fat_region;
-    pos += cluster * 2;
-    hal_seek(pos);
+    move_to_fat_region(cluster);
     hal_read((uint8_t*)&fat_entry, sizeof(fat_entry));
 
     return fat_entry;
@@ -550,7 +558,7 @@ int fat16_read(uint8_t handle, char *buffer, uint32_t count)
 
             /* Look for the next cluster in the FAT, unless we are already reading the last one */
             if (handles[handle].remaining_bytes != 0) {
-                uint16_t fat_entry = read_fat_entry(handles[handle].cluster - 1);
+                uint16_t fat_entry = read_fat_entry(handles[handle].cluster);
                 /* TODO: check fat entry */
 
                 handles[handle].cluster = fat_entry;
@@ -647,7 +655,7 @@ int fat16_delete(char *filename)
     /* Find the first cluster used by the file */
     move_to_root_directory_region(entry_index);
     hal_read((uint8_t*)&entry, sizeof(struct dir_entry));
-    cluster = entry.starting_cluster - INDEX_FIRST_CLUSTER;
+    cluster = entry.starting_cluster;
 
     /* The first byte of the entry must be 0xE5 if it is not the last
      * entry in the root directory. Otherwise, a value of 0 must be
