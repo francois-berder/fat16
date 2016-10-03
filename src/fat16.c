@@ -18,6 +18,40 @@
 
 #define INDEX_FIRST_CLUSTER     (2)
 
+struct fat16_bpb {
+    char oem_name[8];
+    uint16_t bytes_per_sector;
+    uint8_t sectors_per_cluster;
+    uint16_t reversed_sector_count;
+    uint8_t num_fats;
+    uint16_t root_entry_count;
+    uint32_t sector_count;
+    uint16_t fat_size; /* in sectors */
+    uint32_t volume_id;
+    char label[11];
+    char fs_type[8];
+};
+
+struct dir_entry {
+    char filename[11];
+    uint8_t attribute;
+    uint8_t reserved[10];
+    uint8_t time[2];
+    uint8_t date[2];
+    uint16_t starting_cluster;
+    uint32_t size;
+};
+
+enum FILE_ATTRIBUTE
+{
+    READ_ONLY   = 0x01,
+    HIDDEN      = 0x02,
+    SYSTEM      = 0x04,
+    VOLUME      = 0x08,
+    SUBDIR      = 0x10,
+    ARCHIVE     = 0x20
+};
+
 static struct fat16_bpb bpb;
 static uint32_t root_directory_sector_count;
 static struct {
@@ -265,6 +299,10 @@ static void move_to_root_directory_region(uint16_t entry_index)
     hal_seek(pos);
 }
 
+/* @brief Move cursor to a location in the first FAT.
+ *
+ * @param[in] cluster Cluster index - 2.
+ */
 static void move_to_fat_region(uint16_t cluster)
 {
     uint32_t pos = start_fat_region;
