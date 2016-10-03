@@ -666,6 +666,11 @@ int fat16_delete(char *filename)
     move_to_root_directory_region(entry_index);
     hal_write(&entry_marker, sizeof(entry_marker));
 
+    /* If the file is empty, the starting cluster variable is equal to 0.
+     * No need to iterate trough the FAT. */
+    if (cluster == 0)
+        return 0;
+
     /* Mark all clusters in the FAT as available */
     do {
         uint16_t free_cluster = 0;
