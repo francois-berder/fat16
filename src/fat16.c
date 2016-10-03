@@ -433,21 +433,20 @@ int fat16_init(void)
 
     /* Find number of sectors in data region */
     data_sector_count = bpb.sector_count - (bpb.reversed_sector_count + (bpb.num_fats * bpb.fat_size) + root_directory_sector_count);
-    LOG("data sector count: %u\n", data_sector_count);
-
     data_cluster_count = data_sector_count / bpb.sectors_per_cluster;
     LOG("data cluster count: %u\n", data_cluster_count);
-
-    start_fat_region = bpb.reversed_sector_count * bpb.bytes_per_sector;
-    LOG("start_fat_region=%08X\n", start_fat_region);
-    start_root_directory_region = start_fat_region + (bpb.num_fats * bpb.fat_size) * bpb.bytes_per_sector;
-    LOG("start_root_directory_region=%08X\n", start_root_directory_region);
-    start_data_region = start_root_directory_region + (root_directory_sector_count * bpb.bytes_per_sector);
-    LOG("start_data_region=%08X\n", start_data_region);
 
     if (data_cluster_count < 4085
     ||  data_cluster_count >= 65525)
         return -INVALID_FAT_TYPE;
+
+    start_fat_region = bpb.reversed_sector_count * bpb.bytes_per_sector;
+    start_root_directory_region = start_fat_region + (bpb.num_fats * bpb.fat_size) * bpb.bytes_per_sector;
+    start_data_region = start_root_directory_region + (root_directory_sector_count * bpb.bytes_per_sector);
+
+    LOG("start_fat_region=%08X\n", start_fat_region);
+    LOG("start_root_directory_region=%08X\n", start_root_directory_region);
+    LOG("start_data_region=%08X\n", start_data_region);
 
     return 0;
 }
