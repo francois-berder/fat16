@@ -461,6 +461,9 @@ int fat16_init(void)
     LOG("start_root_directory_region=%08X\n", start_root_directory_region);
     LOG("start_data_region=%08X\n", start_data_region);
 
+    /* Make sure that all handles are available */
+    memset(handles, 0, sizeof(handles));
+
     return 0;
 }
 
