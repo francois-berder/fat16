@@ -21,7 +21,7 @@
 #define ROOT_DIR_VFAT_ENTRY             (0x0F)
 #define ROOT_DIR_AVAILABLE_ENTRY        (0xE5)
 
-struct fat16_bpb {
+static struct fat16_bpb {
     char oem_name[8];
     uint16_t bytes_per_sector;
     uint8_t sectors_per_cluster;
