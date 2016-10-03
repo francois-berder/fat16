@@ -56,16 +56,16 @@ enum FILE_ATTRIBUTE
 };
 
 static struct {
-    char filename[11];      /* If handle is not used, filename[0] == 0 */
-    bool read_mode;         /* True if reading from file, false if writing to file */
-    uint16_t cluster;       /* Current cluster reading/writing */
-    uint16_t offset;        /* Offset in bytes in cluster */
+    char filename[11];          /* If handle is not used, filename[0] == 0 */
+    bool read_mode;             /* True if reading from file, false if writing to file */
+    uint16_t cluster;           /* Current cluster reading/writing */
+    uint16_t offset;            /* Offset in bytes in cluster */
     uint32_t remaining_bytes;   /* Remaining bytes to be read in bytes in the file, only used in read mode */
 } handles[HANDLE_COUNT];
 
-static uint32_t start_fat_region;       /* offset in bytes of first FAT */
-static uint32_t start_root_directory_region;    /* offset in bytes of root directory */
-static uint32_t start_data_region;      /* offset in bytes of data region */
+static uint32_t start_fat_region = 0;               /* offset in bytes of first FAT */
+static uint32_t start_root_directory_region = 0;    /* offset in bytes of root directory */
+static uint32_t start_data_region = 0;              /* offset in bytes of data region */
 
 
 static int fat16_read_bpb(void)
