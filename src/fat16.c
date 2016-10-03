@@ -333,7 +333,7 @@ static int find_root_directory_entry(char *filename)
 #endif
 
         /* Skip available entry */
-        if (e.filename[0] == 0xE5)
+        if ((uint8_t)(e.filename[0]) == 0xE5)
             continue;
 
         /* Check if we reach end of list of root directory entries */
