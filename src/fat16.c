@@ -185,6 +185,23 @@ static int fat16_read_bpb(void)
     return 0;
 }
 
+
+static bool is_character_valid(char c)
+{
+    return 'a' <= c <= 'z'
+        || 'A' <= c <= 'Z'
+        || '0' <= c <= '9'
+        || c == '#'
+        || c == '$'
+        || c == '%'
+        || c == '&'
+        || c == '\''
+        || c == '('
+        || c == ')'
+        || c == '-'
+        || c == '@';
+}
+
 /**
  * @brief Convert filename to 8.3 short FAT name.
  *
@@ -207,6 +224,11 @@ static int make_fat_filename(char *fat_filename, char *filename)
             sep = i;
             break;
         }
+
+        if (!is_character_valid(filename[i])) {
+            LOG("Invalid character in filename: %s\n", filename);
+            return -1;
+        }
     }
 
     /* If it cannot find . in the first 9 characters then the name is more
@@ -224,6 +246,12 @@ static int make_fat_filename(char *fat_filename, char *filename)
     for (i = 0; i < 3; ++i) {
         if (filename[i] == '\0')
             return -1;
+
+        if (!is_character_valid(filename[sep+1+i])) {
+            LOG("Invalid character in filename: %s\n", filename);
+            return -1;
+        }
+
         fat_filename[8+i] = toupper(filename[sep+1+i]);
     }
 
