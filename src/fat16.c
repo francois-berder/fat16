@@ -189,9 +189,9 @@ static int fat16_read_bpb(void)
 
 static bool is_character_valid(char c)
 {
-    return 'a' <= c <= 'z'
-        || 'A' <= c <= 'Z'
-        || '0' <= c <= '9'
+    return ('a' <= c && c <= 'z')
+        || ('A' <= c && c <= 'Z')
+        || ('0' <= c && c <= '9')
         || c == '#'
         || c == '$'
         || c == '%'
