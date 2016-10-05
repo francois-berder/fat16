@@ -56,6 +56,16 @@ int fat16_open(char *filename, char mode);
  */
 int fat16_read(uint8_t handle, char *buffer, uint32_t count);
 
+/**
+ * @brief Write data to file.
+ *
+ * @param[in] handle Positive number returned by fat16_init.
+ * @param[in] buffer Pointer to an array of characters.
+ * @param[in] Number of bytes to read.
+ * @return Number of bytes written to file. The return value might be less than
+ * count if there is no space left.
+ */
+int fat16_write(uint8_t handle, char *buffer, uint32_t count);
 
 /**
  * @brief Delete a file.

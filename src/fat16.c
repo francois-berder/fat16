@@ -58,6 +58,7 @@ enum FILE_ATTRIBUTE
 static struct {
     char filename[11];          /* If handle is not used, filename[0] == 0 */
     bool read_mode;             /* True if reading from file, false if writing to file */
+    uint16_t entry_index;       /* Index of the entry in the root directory */
     uint16_t cluster;           /* Current cluster reading/writing */
     uint16_t offset;            /* Offset in bytes in cluster */
     uint32_t remaining_bytes;   /* Remaining bytes to be read in bytes in the file, only used in read mode */
@@ -66,7 +67,7 @@ static struct {
 static uint32_t start_fat_region = 0;               /* offset in bytes of first FAT */
 static uint32_t start_root_directory_region = 0;    /* offset in bytes of root directory */
 static uint32_t start_data_region = 0;              /* offset in bytes of data region */
-
+static uint32_t data_cluster_count = 0;             /* Number of clusters in data region */
 
 static int fat16_read_bpb(void)
 {
@@ -424,6 +425,7 @@ static int fat16_open_read(uint8_t handle, char *filename)
     /* Create handle */
     memcpy(handles[handle].filename, filename, sizeof(handles[handle].filename));
     handles[handle].read_mode = READ_MODE;
+    handles[handle].entry_index = entry_index;
     handles[handle].cluster = entry.starting_cluster;
     handles[handle].offset = 0;
     handles[handle].remaining_bytes = entry.size;
@@ -431,9 +433,121 @@ static int fat16_open_read(uint8_t handle, char *filename)
     return handle;
 }
 
+/**
+ * @brief Find an unused entry in the root directory.
+ *
+ * @return -1 if there is no available entry in the root directory, a positive number otherwise.
+ */
+static int find_available_entry_in_root_directory(void)
+{
+    uint16_t i = 0;
+    do {
+        uint8_t tmp;
+        move_to_root_directory_region(i);
+        hal_read(&tmp, sizeof(tmp));
+
+        if (tmp == 0 || tmp == ROOT_DIR_AVAILABLE_ENTRY)
+            return i;
+
+        ++i;
+    }while (i < bpb.root_entry_count);
+
+    return -1;
+}
+
+static bool last_entry_in_root_directory(uint16_t entry_index)
+{
+    uint8_t tmp = 0;
+
+    if (entry_index  == (bpb.root_entry_count - 1))
+        return true;
+
+    /* Check if the next entry is marked as being the end of the
+     * root directory list.
+     */
+    move_to_root_directory_region(entry_index+1);
+    hal_read((uint8_t*)&tmp, sizeof(tmp));
+    return tmp == 0;
+}
+
+/* @brief Indicate that a root entry is now available.
+ *
+ * The first byte of the entry must be 0xE5 if it is not the last
+ * entry in the root directory. Otherwise, a value of 0 must be
+ * written.
+ *
+ * @param[in] entry_index
+ */
+static void mark_root_entry_as_available(uint16_t entry_index)
+{
+    uint8_t entry_marker = 0;
+    if (!last_entry_in_root_directory(entry_index))
+        entry_marker = ROOT_DIR_AVAILABLE_ENTRY;
+    move_to_root_directory_region(entry_index);
+    hal_write(&entry_marker, sizeof(entry_marker));
+}
+
+static void free_cluster_chain(uint16_t cluster)
+{
+    /* If the file is empty, the starting cluster variable is equal to 0.
+     * No need to iterate trough the FAT. */
+    if (cluster == 0)
+        return;
+
+    /* Mark all clusters in the FAT as available */
+    do {
+        uint16_t free_cluster = 0;
+        uint16_t next_cluster;
+        move_to_fat_region(cluster);
+        hal_read((uint8_t*)&next_cluster, sizeof(next_cluster));
+
+        move_to_fat_region(cluster);
+
+        hal_write((uint8_t*)&free_cluster, sizeof(free_cluster));
+
+        if (next_cluster >= 0xFFF8)
+            break;
+        cluster = next_cluster;
+    } while(1);
+}
+
+static int delete_file(char *fat_filename)
+{
+    int entry_index = 0;
+    uint32_t pos = 0;
+    uint16_t starting_cluster = 0;
+
+    /* Find the file in the root directory */
+    if ((entry_index = find_root_directory_entry(fat_filename)) < 0)
+        return -1;
+
+    mark_root_entry_as_available(entry_index);
+
+    /* Find the first cluster used by the file */
+    pos = start_root_directory_region;
+    pos += entry_index * 32;
+    pos += 26; /* Offset of the cluster in bytes from start of entry */
+    LOG("Moving to %08X\n", pos);
+    hal_seek(pos);
+    hal_read((uint8_t*)&starting_cluster, sizeof(starting_cluster));
+    free_cluster_chain(starting_cluster);
+
+    return 0;
+}
+
+/**
+ * @brief Create a handle and an entry in the FAT.
+ *
+ * @param[in] handle Index to an available handle
+ * @param[in] filename Name of the file in 8.3 format
+ * @return handle if successful, -1 otherwise
+ */
 static int fat16_open_write(uint8_t handle, char *filename)
 {
-    /* Check that it is not opened for reading operations.
+    struct dir_entry entry;
+    int entry_index = 0;
+
+    /* Check that it is not opened for reading operations. */
     if (is_file_opened(filename, READ_MODE)) {
         LOG("Cannot write to file while reading from it.\n");
         return -1;
@@ -442,7 +556,7 @@ static int fat16_open_write(uint8_t handle, char *filename)
     /* Check that it is not opened for writing operations.
      * For simplicity, a file can be written by only one
      * handle.
-     *
+     */
     if (is_file_opened(filename, WRITE_MODE)) {
         LOG("Cannot write to file already opened in write mode.\n");
         return -1;
@@ -450,21 +564,39 @@ static int fat16_open_write(uint8_t handle, char *filename)
 
     /* Discard any previous content.
      * Do not check return value because the file may not exist.
-     *
-    fat16_delete(filename);
-
+     */
+    delete_file(filename);
 
     /* Find a location in the root directory region */
+    if ((entry_index = find_available_entry_in_root_directory()) < 0)
+        return -1;
 
-    /* Create an entry */
+    /* Create an entry in the root directory */
+    memcpy(entry.filename, filename, sizeof(entry.filename));
+    entry.attribute = 0;
+    memset(entry.reserved, 0, sizeof(entry.reserved));
+    memset(entry.time, 0, sizeof(entry.time));
+    memset(entry.date, 0, sizeof(entry.date));
+    entry.starting_cluster = 0;
+    entry.size = 0;
 
+    move_to_root_directory_region(entry_index);
+    hal_write((uint8_t*)&entry, sizeof(struct dir_entry));
 
-    return 0;
+    /* Create a handle */
+    memcpy(handles[handle].filename, filename, sizeof(handles[handle].filename));
+    handles[handle].read_mode = WRITE_MODE;
+    handles[handle].entry_index = entry_index;
+    handles[handle].cluster = 0;
+    handles[handle].offset = 0;
+    handles[handle].remaining_bytes = 0; /* Not used in write mode */
+
+    return handle;
 }
 
 int fat16_init(void)
 {
-    uint32_t data_sector_count, data_cluster_count, root_directory_sector_count;
+    uint32_t data_sector_count, root_directory_sector_count;
     int ret = fat16_read_bpb();
     if (ret < 0)
         return ret;
@@ -608,8 +740,61 @@ int fat16_read(uint8_t handle, char *buffer, uint32_t count)
     return bytes_read_count;
 }
 
+static int allocate_cluster(uint16_t cluster)
+{
+    uint16_t next_cluster;
+    /* Find an empty location in the FAT */
+    move_to_fat_region(0);
+    for (next_cluster = 0; next_cluster < data_cluster_count; ++next_cluster) {
+        uint16_t fat_entry;
+        hal_read((uint8_t*)&fat_entry, sizeof(fat_entry));
+
+        /* Mark it as end of file */
+        if (fat_entry == 0) {
+
+            fat_entry = 0xFFF8;
+            move_to_fat_region(next_cluster);
+            hal_write((uint8_t*)&fat_entry, sizeof(fat_entry));
+            break;
+        }
+    }
+
+    if (next_cluster == data_cluster_count) {
+        LOG("Could not find an available cluster.\n");
+        return -1;
+    }
+
+    next_cluster += FIRST_CLUSTER_INDEX_IN_FAT;
+
+    /* Update current cluster to point to next one */
+    if (cluster != 0) {
+        move_to_fat_region(cluster);
+        hal_write((uint8_t*)&next_cluster, sizeof(next_cluster));
+    }
+
+    return next_cluster;
+}
+
+static void update_size_file(uint16_t entry_index, uint32_t bytes_written_count)
+{
+    uint32_t file_size = 0;
+    uint32_t pos = start_root_directory_region;
+    pos += entry_index * 32;
+    pos += 28; /* Offset in bytes of the file size in the entry */
+
+    hal_seek(pos);
+    hal_read((uint8_t*)&file_size, sizeof(file_size));
+
+    file_size += bytes_written_count;
+
+    hal_seek(pos);
+    hal_write((uint8_t*)&file_size, sizeof(file_size));
+}
+
 int fat16_write(uint8_t handle, char *buffer, uint32_t count)
 {
+    uint32_t bytes_written_count = 0;
+
     if (check_handle(handle) == false) {
         LOG("fat16_write: Invalid handle.\n");
         return -1;
@@ -620,53 +805,67 @@ int fat16_write(uint8_t handle, char *buffer, uint32_t count)
         return -1;
     }
 
-    /* Write in chunk until count is 0 or no clusters can be allocated *
+    if (buffer == NULL) {
+        LOG("fat16_write: Cannot write using null buffer.\n");
+        return -1;
+    }
+
+    if (count == 0)
+        return 0;
+
+    /* If the file is not empty, move position to the end of file */
+    if (handles[handle].cluster != 0)
+        move_to_data_region(handles[handle].cluster, handles[handle].offset);
+
+    /* Write in chunk until count is 0 or no clusters can be allocated */
     while (count > 0) {
-        uint32_t chunk_length = count, bytes_remaining_in_cluster = 0;
+        uint32_t chunk_length = count;
+        uint32_t bytes_remaining_in_cluster = bpb.sectors_per_cluster * bpb.bytes_per_sector - handles[handle].offset;
 
+        /* Check if we need to allocate a new cluster */
+        if (handles[handle].cluster == 0
+        ||  bytes_remaining_in_cluster == 0) {
+            int new_cluster = allocate_cluster(handles[handle].cluster);
+            if (new_cluster < 0)
+                return -1;
 
-        bytes_remaining_in_cluster = bpb.sectors_per_cluster * bpb.bytes_per_sector - handles[handle].offset;
+            /* If the file was empty, update cluster in root directory entry */
+            if (handles[handle].cluster == 0) {
+                uint32_t pos = start_root_directory_region;
+                pos += handles[handle].entry_index * 32;
+                pos += 26; /* Offset in bytes of starting cluster in the entry */
+                hal_seek(pos);
+                hal_write((uint8_t*)&new_cluster, sizeof(new_cluster));
+            }
 
-        /* Check if we need to allocate a new cluster *
-        if (bytes_remaining_in_cluster == 0) {
+            handles[handle].cluster = new_cluster;
+            handles[handle].offset = 0;
 
+            move_to_data_region(new_cluster, 0);
+            bytes_remaining_in_cluster = bpb.sectors_per_cluster * bpb.bytes_per_sector;
         }
 
-        /* Check that we write within the boundary of the current cluster
+        /* Check that we write within the boundary of the current cluster */
         if (chunk_length > bytes_remaining_in_cluster)
             chunk_length = bytes_remaining_in_cluster;
 
-        hal_write();
+        hal_write((uint8_t*)buffer, chunk_length);
 
         count -= chunk_length;
         buffer += chunk_length;
-    }*/
+        bytes_written_count += chunk_length;
+        handles[handle].offset += chunk_length;
+    }
 
-    return -1;
-}
+    /* Update size of file in root directory entry */
+    update_size_file(handles[handle].entry_index, bytes_written_count);
 
-static bool last_entry_in_root_directory(uint16_t entry_index)
-{
-    uint8_t tmp = 0;
-
-    if (entry_index  == (bpb.root_entry_count - 1))
-        return true;
-
-    /* Check if the next entry is marked as being the end of the
-     * root directory list.
-     */
-    move_to_root_directory_region(entry_index+1);
-    hal_read((uint8_t*)&tmp, sizeof(tmp));
-    return tmp == 0;
+    return bytes_written_count;
 }
 
 int fat16_delete(char *filename)
 {
     char fat_filename[11];
-    uint8_t entry_marker = 0;
-    uint16_t cluster = 0;
-    int entry_index;
-    struct dir_entry entry;
 
     if (filename == NULL) {
         LOG("Cannot open a file with a null path string.\n");
@@ -682,44 +881,5 @@ int fat16_delete(char *filename)
         return -1;
     }
 
-    /* Find the file in the root directory */
-    if ((entry_index = find_root_directory_entry(fat_filename)) < 0)
-        return -1;
-
-    /* Find the first cluster used by the file */
-    move_to_root_directory_region(entry_index);
-    hal_read((uint8_t*)&entry, sizeof(struct dir_entry));
-    cluster = entry.starting_cluster;
-
-    /* The first byte of the entry must be 0xE5 if it is not the last
-     * entry in the root directory. Otherwise, a value of 0 must be
-     * written.
-     */
-    if (!last_entry_in_root_directory(entry_index))
-        entry_marker = ROOT_DIR_AVAILABLE_ENTRY;
-    move_to_root_directory_region(entry_index);
-    hal_write(&entry_marker, sizeof(entry_marker));
-
-    /* If the file is empty, the starting cluster variable is equal to 0.
-     * No need to iterate trough the FAT. */
-    if (cluster == 0)
-        return 0;
-
-    /* Mark all clusters in the FAT as available */
-    do {
-        uint16_t free_cluster = 0;
-        uint16_t next_cluster;
-        move_to_fat_region(cluster);
-        hal_read((uint8_t*)&next_cluster, sizeof(next_cluster));
-
-        move_to_fat_region(cluster);
-
-        hal_write((uint8_t*)&free_cluster, sizeof(free_cluster));
-
-        if (next_cluster >= 0xFFF8)
-            break;
-        cluster = next_cluster;
-    } while(1);
-
-    return 0;
+    return delete_file(fat_filename);
 }
