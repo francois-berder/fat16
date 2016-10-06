@@ -663,7 +663,7 @@ static bool check_handle(uint8_t handle)
     if (handle >= HANDLE_COUNT)
         return false;
 
-    if (handles[handle].filename == 0)
+    if (handles[handle].filename[0] == 0)
         return false;
 
     return true;
