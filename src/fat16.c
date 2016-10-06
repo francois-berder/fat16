@@ -21,6 +21,11 @@
 #define ROOT_DIR_VFAT_ENTRY             (0x0F)
 #define ROOT_DIR_AVAILABLE_ENTRY        (0xE5)
 
+/* cluster is a 16bit integer stored 26 bytes after the start of a
+ * root directory entry.
+ */
+#define CLUSTER_OFFSET_ROOT_DIR_ENTRY   (26)
+
 static struct fat16_bpb {
     char oem_name[8];
     uint16_t bytes_per_sector;
@@ -542,7 +547,7 @@ static int delete_file(char *fat_filename)
     /* Find the first cluster used by the file */
     pos = start_root_directory_region;
     pos += entry_index * 32;
-    pos += 26; /* Offset of the cluster in bytes from start of entry */
+    pos += CLUSTER_OFFSET_ROOT_DIR_ENTRY;
     LOG("Moving to %08X\n", pos);
     hal_seek(pos);
     hal_read((uint8_t*)&starting_cluster, sizeof(starting_cluster));
@@ -860,7 +865,7 @@ int fat16_write(uint8_t handle, char *buffer, uint32_t count)
             if (handles[handle].cluster == 0) {
                 uint32_t pos = start_root_directory_region;
                 pos += handles[handle].entry_index * 32;
-                pos += 26; /* Offset in bytes of starting cluster in the entry */
+                pos += CLUSTER_OFFSET_ROOT_DIR_ENTRY;
                 hal_seek(pos);
                 hal_write((uint8_t*)&new_cluster, sizeof(new_cluster));
             }
