@@ -863,6 +863,17 @@ int fat16_write(uint8_t handle, char *buffer, uint32_t count)
     return bytes_written_count;
 }
 
+int fat16_close(uint8_t handle)
+{
+    if (check_handle(handle) == false) {
+        LOG("fat16_write: Invalid handle.\n");
+        return -1;
+    }
+
+    handles[handle].filename[0] = 0;
+    return 0;
+}
+
 int fat16_delete(char *filename)
 {
     char fat_filename[11];

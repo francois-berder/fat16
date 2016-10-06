@@ -68,6 +68,14 @@ int fat16_read(uint8_t handle, char *buffer, uint32_t count);
 int fat16_write(uint8_t handle, char *buffer, uint32_t count);
 
 /**
+ * @brief Release the handle.
+ *
+ * @param[in] handle Positive number returned by fat16_open
+ * @return 0 if successful, -1 otherwise
+ */
+int fat16_close(uint8_t handle);
+
+/**
  * @brief Delete a file.
  *
  * The file must not be opened for reading or writing.
