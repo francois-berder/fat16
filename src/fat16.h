@@ -48,7 +48,7 @@ int fat16_open(char *filename, char mode);
 /**
  * @brief Read data from file.
  *
- * @param[in] handle Positive number returned by fat16_init.
+ * @param[in] handle Positive number returned by fat16_open.
  * @param[out] buffer Pointer to an array of characters.
  * @param[in] Number of bytes to read.
  * @return Number of bytes read from file. The return value might be less than
@@ -59,7 +59,7 @@ int fat16_read(uint8_t handle, char *buffer, uint32_t count);
 /**
  * @brief Write data to file.
  *
- * @param[in] handle Positive number returned by fat16_init.
+ * @param[in] handle Positive number returned by fat16_open.
  * @param[in] buffer Pointer to an array of characters.
  * @param[in] Number of bytes to read.
  * @return Number of bytes written to file. The return value might be less than
