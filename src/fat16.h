@@ -86,4 +86,33 @@ int fat16_close(uint8_t handle);
  */
 int fat16_delete(char *filename);
 
+/**
+ * @brief Gives the name of a file in the root directory.
+ *
+ * By repeatedly calling this function in this manner:
+ *
+ * @code{.c}
+ * char filename[13];
+ * int i = 0;
+ * while(i >= 0) {
+ *     i = fat16_ls(i, filename);
+ *     if (i >= 0)
+ *         printf("%s\n", filename);
+ * }
+ * @endcode
+ *
+ * It is then possible to get the complete list of files in the root directory
+ * without using too much memory.
+ *
+ * @param[in] index Index of the entry to search for a file.
+ * @param[out] filename Name in format:
+ * <name> + '.' + <extension> + '\0'
+ * name and extension are trimmed.
+ * It is assumed that filename is at least 13 bytes long. The last byte is
+ * always equal to zero.
+ * @return a positive number if successful, -1 if an error occurs and -2 if
+ * there are no more files in the root directory.
+ */
+int fat16_ls(int index, char *filename);
+
 #endif

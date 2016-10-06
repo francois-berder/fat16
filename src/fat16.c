@@ -926,3 +926,67 @@ int fat16_delete(char *filename)
 
     return delete_file(fat_filename);
 }
+
+int fat16_ls(int index, char *filename)
+{
+    uint8_t name_length = 0, ext_length = 0;
+    char fat_filename[11];
+
+    if (index < 0 || index >= bpb.root_entry_count)
+        return -1;
+
+    if (filename == NULL)
+        return -1;
+
+    fat_filename[0] = 0;
+    while (fat_filename[0] == 0
+       || ((uint8_t)fat_filename[0]) == ROOT_DIR_AVAILABLE_ENTRY) {
+        uint8_t attribute = 0;
+
+        move_to_root_directory_region(index);
+        hal_read((uint8_t*)fat_filename, 11);
+        ++index;
+
+        /* If this condition is true, the end of the root directory is reached.
+         * and there are no more files to be found.
+         */
+        if (index == bpb.root_entry_count)
+            return -2;
+
+        /* Also reading attribute to skip any vfat entry. */
+        hal_read(&attribute, 1);
+        if ((attribute & ROOT_DIR_VFAT_ENTRY) == ROOT_DIR_VFAT_ENTRY) {
+            fat_filename[0] = 0;    /* Make sure that the condition of the loop
+                                     * remains true.
+                                     */
+            continue;
+        }
+    }
+
+    /* Reformat filename:
+     *   - Trim name
+     *   - Add '.' to separate name and extension
+     *   - Trim extension
+     *   - Add null terminated
+     */
+    for (name_length = 0; name_length < 8; ++name_length) {
+        char c = fat_filename[name_length];
+        if (c == ' ')
+            break;
+
+        filename[name_length] = c;
+    }
+
+    filename[name_length] = '.';
+
+    for (ext_length = 0; ext_length < 3; ++ext_length) {
+        char c = fat_filename[8 + ext_length];
+        if (c == ' ')
+            break;
+        filename[name_length + 1 + ext_length] = c;
+    }
+
+    filename[name_length + 1 + ext_length] = '\0';
+
+    return index;
+}
