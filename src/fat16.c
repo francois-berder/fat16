@@ -396,7 +396,6 @@ static int find_root_directory_entry(char *filename)
     return -1;
 }
 
-
 /**
  * @brief Create a handle for reading a file.
  *
@@ -455,6 +454,13 @@ static int find_available_entry_in_root_directory(void)
     return -1;
 }
 
+
+/**
+ * @brief Check if the entry is the last entry in the root directory.
+ *
+ * @param[in] entry_index
+ * @return True if the entry is the last one.
+ */
 static bool last_entry_in_root_directory(uint16_t entry_index)
 {
     uint8_t tmp = 0;
@@ -511,6 +517,16 @@ static void free_cluster_chain(uint16_t cluster)
     } while(1);
 }
 
+
+/**
+ * @brief Delete a file.
+ *
+ * Remove the entry from the and mark all clusters used by this file as
+ * available. It does not clear the data region.
+ *
+ * @param[in] fat_filename Name of the filename in 8.3 format
+ * @return 0 if successful, -1 otherwise
+ */
 static int delete_file(char *fat_filename)
 {
     int entry_index = 0;
@@ -594,6 +610,88 @@ static int fat16_open_write(uint8_t handle, char *filename)
     return handle;
 }
 
+/* Return true if handle is valid, false otherwise */
+static bool check_handle(uint8_t handle)
+{
+    if (handle >= HANDLE_COUNT)
+        return false;
+
+    if (handles[handle].filename[0] == 0)
+        return false;
+
+    return true;
+}
+
+/**
+ * @brief Read the cluster status in the FAT.
+ */
+static uint16_t read_fat_entry(uint16_t cluster)
+{
+    uint16_t fat_entry = 0;
+    move_to_fat_region(cluster);
+    hal_read((uint8_t*)&fat_entry, sizeof(fat_entry));
+
+    return fat_entry;
+}
+
+static int allocate_cluster(uint16_t cluster)
+{
+    uint16_t next_cluster;
+    /* Find an empty location in the FAT */
+    move_to_fat_region(0);
+    for (next_cluster = 0; next_cluster < data_cluster_count; ++next_cluster) {
+        uint16_t fat_entry;
+        hal_read((uint8_t*)&fat_entry, sizeof(fat_entry));
+
+        /* Mark it as end of file */
+        if (fat_entry == 0) {
+
+            fat_entry = 0xFFF8;
+            move_to_fat_region(next_cluster);
+            hal_write((uint8_t*)&fat_entry, sizeof(fat_entry));
+            break;
+        }
+    }
+
+    if (next_cluster == data_cluster_count) {
+        LOG("Could not find an available cluster.\n");
+        return -1;
+    }
+
+    next_cluster += FIRST_CLUSTER_INDEX_IN_FAT;
+
+    /* Update current cluster to point to next one */
+    if (cluster != 0) {
+        move_to_fat_region(cluster);
+        hal_write((uint8_t*)&next_cluster, sizeof(next_cluster));
+    }
+
+    return next_cluster;
+}
+
+/**
+ * @brief Update the size of file in the root entry.
+ *
+ * @param[in] entry_index Index of the entry in the root directory
+ * @param[in] bytes_written_count Number of bytes appended to the file. Hence
+ * the new size of the file is bytes_written_count + old_size
+ */
+static void update_size_file(uint16_t entry_index, uint32_t bytes_written_count)
+{
+    uint32_t file_size = 0;
+    uint32_t pos = start_root_directory_region;
+    pos += entry_index * 32;
+    pos += 28; /* Offset in bytes of the file size in the entry */
+
+    hal_seek(pos);
+    hal_read((uint8_t*)&file_size, sizeof(file_size));
+
+    file_size += bytes_written_count;
+
+    hal_seek(pos);
+    hal_write((uint8_t*)&file_size, sizeof(file_size));
+}
+
 int fat16_init(void)
 {
     uint32_t data_sector_count, root_directory_sector_count;
@@ -657,26 +755,6 @@ int fat16_open(char *filename, char mode)
         return fat16_open_write(handle, fat_filename);
 }
 
-/* Return true if handle is valid, false otherwise */
-static bool check_handle(uint8_t handle)
-{
-    if (handle >= HANDLE_COUNT)
-        return false;
-
-    if (handles[handle].filename[0] == 0)
-        return false;
-
-    return true;
-}
-
-static uint16_t read_fat_entry(uint16_t cluster)
-{
-    uint16_t fat_entry = 0;
-    move_to_fat_region(cluster);
-    hal_read((uint8_t*)&fat_entry, sizeof(fat_entry));
-
-    return fat_entry;
-}
 
 int fat16_read(uint8_t handle, char *buffer, uint32_t count)
 {
@@ -738,57 +816,6 @@ int fat16_read(uint8_t handle, char *buffer, uint32_t count)
     }
 
     return bytes_read_count;
-}
-
-static int allocate_cluster(uint16_t cluster)
-{
-    uint16_t next_cluster;
-    /* Find an empty location in the FAT */
-    move_to_fat_region(0);
-    for (next_cluster = 0; next_cluster < data_cluster_count; ++next_cluster) {
-        uint16_t fat_entry;
-        hal_read((uint8_t*)&fat_entry, sizeof(fat_entry));
-
-        /* Mark it as end of file */
-        if (fat_entry == 0) {
-
-            fat_entry = 0xFFF8;
-            move_to_fat_region(next_cluster);
-            hal_write((uint8_t*)&fat_entry, sizeof(fat_entry));
-            break;
-        }
-    }
-
-    if (next_cluster == data_cluster_count) {
-        LOG("Could not find an available cluster.\n");
-        return -1;
-    }
-
-    next_cluster += FIRST_CLUSTER_INDEX_IN_FAT;
-
-    /* Update current cluster to point to next one */
-    if (cluster != 0) {
-        move_to_fat_region(cluster);
-        hal_write((uint8_t*)&next_cluster, sizeof(next_cluster));
-    }
-
-    return next_cluster;
-}
-
-static void update_size_file(uint16_t entry_index, uint32_t bytes_written_count)
-{
-    uint32_t file_size = 0;
-    uint32_t pos = start_root_directory_region;
-    pos += entry_index * 32;
-    pos += 28; /* Offset in bytes of the file size in the entry */
-
-    hal_seek(pos);
-    hal_read((uint8_t*)&file_size, sizeof(file_size));
-
-    file_size += bytes_written_count;
-
-    hal_seek(pos);
-    hal_write((uint8_t*)&file_size, sizeof(file_size));
 }
 
 int fat16_write(uint8_t handle, char *buffer, uint32_t count)
