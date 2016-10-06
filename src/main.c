@@ -1,3 +1,6 @@
+/* Tests for the FAT16 driver. */
+
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -6,12 +9,26 @@
 
 #define DEFAULT_FS_PATH     "data/fs.img"
 
+typedef bool(*test_func)(void);
+
+struct test_case {
+    char *name;
+    test_func f;
+};
+
+static bool test_init(void)
+{
+    return fat16_init() == 0;
+}
+
+static struct test_case tests[] = {
+    { "init", test_init }
+};
 
 int main(int argc, char **argv)
 {
-    int ret;
     char fs_path[255];
-    char buffer;
+    unsigned int i = 0;
 
     if (argc < 2) {
         printf("Using default filesystem path: %s\n", DEFAULT_FS_PATH);
@@ -25,16 +42,13 @@ int main(int argc, char **argv)
         return -1;
     printf("%s filesystem loaded.\n", fs_path);
 
-    // FAT16 operations
-    ret = fat16_init();
-    printf("ret: %d\n", ret);
-
-    ret = fat16_open("hello.txt", 'r');
-    printf("ret: %d\n", ret);
-
-
-    while (fat16_read(ret, &buffer, sizeof(buffer)) > 0)
-        printf("%c", buffer);
+    for (i = 0; i < sizeof(tests)/sizeof(struct test_case); ++i) {
+        printf("===== test %u: %s =====\n\n", i+1, tests[i].name);
+        if (tests[i].f())
+            printf("PASS\n");
+        else
+            printf("FAIL\n");
+    }
 
     // Release filesystem image
     if (linux_release_image() < 0)
