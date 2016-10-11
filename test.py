@@ -9,13 +9,16 @@ _LIB = ctypes.CDLL(dllabspath)
 
 test_records = {}
 
+
 def record_test_result(test_name, result):
     test_records[test_name] = result
+
 
 def test_init():
     print('----- init -----')
     ret = _LIB.fat16_init()
     record_test_result('init', ret == 0)
+
 
 def main(argv):
     _LIB.linux_load_image(str.encode(argv[1]))
