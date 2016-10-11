@@ -28,10 +28,10 @@ def main(argv):
 
     _LIB.linux_release_image()
 
-if __name__ == "__main__":
-    main(sys.argv)
-
     # Print test results
     print('\n\n\n##### TEST RESULTS #####')
     for test_name, test_result in test_records.items():
         print('{}: {}'.format(test_name, 'PASS' if test_result else 'FAIL'))
+
+if __name__ == "__main__":
+    main(sys.argv)
