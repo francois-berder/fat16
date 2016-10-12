@@ -16,6 +16,13 @@ def record_test_result(test_name, result):
 def restore_image():
     subprocess.run(['git', 'checkout' ,'data/fs.img'])
 
+def mount_image():
+    subprocess.run(['mount', 'data/fs.img', '/mnt'])
+
+def unmount_image():
+    subprocess.run(['unmount', '/mnt'])
+
+
 def test_init():
     restore_image()
     print('----- init -----')
