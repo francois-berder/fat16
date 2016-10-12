@@ -13,28 +13,32 @@ test_records = {}
 def record_test_result(test_name, result):
     test_records[test_name] = result
 
-def restore_image():
-    subprocess.run(['git', 'checkout' ,'data/fs.img'])
+def restore_image(image_path):
+    subprocess.run(['git', 'checkout' , image_path])
 
 def mount_image():
-    subprocess.run(['mount', 'data/fs.img', '/mnt'])
+    subprocess.run(['mount', image_path, '/mnt'])
 
 def unmount_image():
     subprocess.run(['unmount', '/mnt'])
 
 
-def test_init():
-    restore_image()
+def test_init(image_path):
+    restore_image(image_path)
     print('----- init -----')
     ret = _LIB.fat16_init()
     record_test_result('init', ret == 0)
 
 
 def main(argv):
-    _LIB.linux_load_image(str.encode(argv[1]))
+    image_path = 'data/fs.img'
+    if len(argv) > 1:
+        image_path = argv[1]
+
+    _LIB.linux_load_image(str.encode(image_path))
 
     # Perform tests
-    test_init()
+    test_init(image_path)
 
     _LIB.linux_release_image()
 
