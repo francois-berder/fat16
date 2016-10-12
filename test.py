@@ -18,12 +18,28 @@ def record_test_result(test_name, result):
 def restore_image(image_path):
     subprocess.run(['git', 'checkout' , image_path])
 
-def mount_image():
+def unmount_image():
+    subprocess.run(['umount', '/mnt'])
+
+def mount_image(image_path):
+    unmount_image()
     subprocess.run(['mount', image_path, '/mnt'])
 
-def unmount_image():
-    subprocess.run(['unmount', '/mnt'])
+def delete_file(filename):
+    subprocess.run(['rm', '/mnt/' + filename])
 
+def create_empty_file(image_path, filename):
+    mount_image(image_path)
+    delete_file(filename)
+    subprocess.run(['touch', '/mnt/' + filename])
+    unmount_image()
+
+def create_small_file(image_path, filename, content):
+    mount_image(image_path)
+    small_file = open('/mnt/' + filename, 'w')
+    small_file.write(content)
+    small_file.close()
+    unmount_image()
 
 def test_init(image_path):
     restore_image(image_path)
