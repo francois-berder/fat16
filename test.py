@@ -1,6 +1,7 @@
 import ctypes
 import os.path
 import sys
+import subprocess
 
 # Load FAT16 library
 dll_name = "libfat16_driver.so"
@@ -9,12 +10,14 @@ _LIB = ctypes.CDLL(dllabspath)
 
 test_records = {}
 
-
 def record_test_result(test_name, result):
     test_records[test_name] = result
 
+def restore_image():
+    subprocess.run(['git', 'checkout' ,'data/fs.img'])
 
 def test_init():
+    restore_image()
     print('----- init -----')
     ret = _LIB.fat16_init()
     record_test_result('init', ret == 0)
