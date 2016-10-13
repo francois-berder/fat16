@@ -13,7 +13,14 @@ _LIB = ctypes.CDLL(dllabspath)
 test_records = {}
 
 def record_test_result(test_name, result):
-    test_records[test_name] = result
+    if not result:
+        test_records[test_name] = result
+    else:
+        if test_name in test_records.keys():
+            if test_records[test_name]:
+                 test_records[test_name] = result
+        else:
+            test_records[test_name] = result
 
 def restore_image(image_path):
     subprocess.run(['git', 'checkout' , image_path])
