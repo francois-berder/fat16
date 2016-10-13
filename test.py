@@ -22,11 +22,10 @@ def unmount_image():
     subprocess.run(['umount', '/mnt'])
 
 def mount_image(image_path):
-    unmount_image()
     subprocess.run(['mount', image_path, '/mnt'])
 
 def delete_file(filename):
-    subprocess.run(['rm', '/mnt/' + filename])
+    subprocess.run(['rm', '-f', '/mnt/' + filename])
 
 def create_empty_file(image_path, filename):
     mount_image(image_path)
