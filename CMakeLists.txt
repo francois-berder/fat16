@@ -7,4 +7,4 @@ set(CMAKE_C_FLAGS_DEBUG "-Wall -Wextra -ggdb3")
 
 file(GLOB_RECURSE source_files src/*.c)
 
-add_library(fat16_driver SHARED fs ${source_files})
+add_library(fat16_driver SHARED ${source_files})
