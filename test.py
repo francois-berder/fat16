@@ -63,6 +63,27 @@ def test_read_empty_file(image_path):
     _LIB.linux_release_image()
     record_test_result('read_empty_file', ret == -9)
 
+def test_read_small_file(image_path):
+    restore_image(image_path)
+    create_small_file(image_path, 'HELLO.TXT', 'Hello World')
+    _LIB.linux_load_image(str.encode(image_path))
+    print('----- read small file -----')
+
+    mode = (ctypes.c_char)(str.encode('r'))
+    fd = _LIB.fat16_open(str.encode('HELLO.TXT'), mode)
+    if fd < 0:
+        record_test_result('read_empty_file', False)
+
+    buf = (ctypes.c_uint8 * 20)()
+    ret = _LIB.fat16_read(fd, buf, 20)
+    if ret != 11:
+        record_test_result('read_small_file', False)
+
+    ret = _LIB.fat16_close(fd)
+    record_test_result('read_small_file', ret == 0)
+
+    _LIB.linux_release_image()
+
 def main(argv):
     image_path = 'data/fs.img'
     if len(argv) > 1:
