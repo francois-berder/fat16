@@ -46,6 +46,18 @@ def test_init(image_path):
     ret = _LIB.fat16_init()
     record_test_result('init', ret == 0)
 
+def test_read_empty_file(image_path):
+    restore_image(image_path)
+    create_empty_file(image_path, 'HELLO.TXT')
+    print('----- read empty file -----')
+    mode = (ctypes.c_char)(str.encode('r'))
+    fd = _LIB.fat16_open(str.encode('HELLO.TXT'), mode)
+    if fd < 0:
+        record_test_result('read_empty_file', False)
+
+    buf = (ctypes.c_uint8 * 1)()
+    ret = _LIB.fat16_read(fd, buf, 1)
+    record_test_result('read_empty_file', ret == -9)
 
 def main(argv):
     image_path = 'data/fs.img'
@@ -56,6 +68,7 @@ def main(argv):
 
     # Perform tests
     test_init(image_path)
+    test_read_empty_file(image_path)
 
     _LIB.linux_release_image()
 
