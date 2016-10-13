@@ -13,9 +13,9 @@ enum FAT_ERROR
     INVALID_RESERVED_SECTOR_COUNT,
     INVALID_ROOT_ENTRY_COUNT,
     INVALID_SECTOR_COUNT,
-    INVALID_FAT_TYPE
+    INVALID_FAT_TYPE,
+    END_OF_FILE_REACHED,
 };
-
 
 /**
  * @brief Initialise the FAT16 driver.
@@ -47,6 +47,9 @@ int fat16_open(char *filename, char mode);
 
 /**
  * @brief Read data from file.
+ *
+ * If the end of file is reached and there are no more bytes to be read, this
+ * function returns -END_OF_FILE_REACHED.
  *
  * @param[in] handle Positive number returned by fat16_open.
  * @param[out] buffer Pointer to an array of characters.

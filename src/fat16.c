@@ -777,7 +777,7 @@ int fat16_read(uint8_t handle, char *buffer, uint32_t count)
 
     /* Check if we reach end of file */
     if (handles[handle].remaining_bytes == 0)
-        return -2;
+        return -END_OF_FILE_REACHED;
 
     move_to_data_region(handles[handle].cluster, handles[handle].offset);
 
