@@ -86,6 +86,9 @@ def test_read_small_file(image_path):
     if ret != 11:
         record_test_result('read_small_file', False)
 
+    if "".join(map(chr, buf))[0:11] != 'Hello World':
+        record_test_result('read_small_file', False)
+
     ret = _LIB.fat16_close(fd)
     record_test_result('read_small_file', ret == 0)
 
