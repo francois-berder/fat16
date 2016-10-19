@@ -1,7 +1,6 @@
 # FAT16 Reader
 
 This aim of this project is to create a small program able to read FAT16 image on Linux which will be ported later on a PIC24.
-
 The data folder contains images used to test the program.
 
 #### Build instructions:
@@ -9,7 +8,9 @@ The data folder contains images used to test the program.
 ```sh
 $ cmake .
 $ make
-$ ./fs
 ```
+This creates a shared library libfat16_driver.so, then the test suite must be run as root:
 
-The path to a specific fat16 image can be specified, otherwise, it will read the image at data/fs.img.
+```sh
+$ sudo ./test.py
+```
