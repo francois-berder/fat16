@@ -78,7 +78,7 @@ def test_read_small_file(image_path):
     mode = (ctypes.c_char)(str.encode('r'))
     fd = _LIB.fat16_open(str.encode('HELLO.TXT'), mode)
     if fd < 0:
-        record_test_result('read_empty_file', False)
+        record_test_result('read_small_file', False)
 
     buf = (ctypes.c_uint8 * 20)()
     ret = _LIB.fat16_read(fd, buf, 20)
