@@ -43,6 +43,13 @@ def create_small_file(image_path, filename, content):
     small_file.close()
     unmount_image()
 
+def check_small_file_content(image_path, filename, expected_content):
+    mount_image(image_path)
+    content = subprocess.check_output(['cat', '/mnt/' + filename])
+    content = content.decode()
+    unmount_image()
+    return content == expected_content
+
 def test_init(image_path):
     restore_image(image_path)
     _LIB.linux_load_image(str.encode(image_path))
@@ -93,6 +100,31 @@ def test_read_small_file(image_path):
 
     _LIB.linux_release_image()
 
+def test_write_small_file(image_path):
+    restore_image(image_path)
+    _LIB.linux_load_image(str.encode(image_path))
+    print('----- write small file -----')
+    mode = (ctypes.c_char)(str.encode('w'))
+    fd = _LIB.fat16_open(str.encode('HELLO.TXT'), mode)
+    if fd < 0:
+        record_test_result('write_small_file', False)
+
+    content = 'This is a test'
+    buf = (ctypes.c_uint8 * len(content))(*content.encode('utf-8'))
+    ret = _LIB.fat16_write(fd, buf, len(content))
+
+    # ret should be equal to len(content) because we assume there will be enough space
+    # left
+    if ret != len(content):
+        record_test_result('write_small_file', False)
+
+    if not check_small_file_content(image_path, 'HELLO.TXT', content):
+        record_test_result('write_small_file', False)
+
+    ret = _LIB.fat16_close(fd)
+    record_test_result('write_small_file', ret == 0)
+    _LIB.linux_release_image()
+
 def main(argv):
     image_path = 'data/fs.img'
     if len(argv) > 1:
@@ -102,6 +134,7 @@ def main(argv):
     test_init(image_path)
     test_read_empty_file(image_path)
     test_read_small_file(image_path)
+    test_write_small_file(image_path)
 
     # Print test results
     print('\n\n\n##### TEST RESULTS #####')
