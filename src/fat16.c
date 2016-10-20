@@ -384,10 +384,8 @@ static int find_root_directory_entry(char *filename)
             continue;
 
         /* Check if we reach end of list of root directory entries */
-        if (e.filename[0] == 0) {
-            LOG("File %s not found.\n", filename);
+        if (e.filename[0] == 0)
             return -1;
-        }
 
         /* Ignore any VFAT entry */
         if ((e.attribute & ROOT_DIR_VFAT_ENTRY) == ROOT_DIR_VFAT_ENTRY)
