@@ -63,8 +63,11 @@ def test_read_empty_file(image_path):
 
     buf = (ctypes.c_uint8 * 1)()
     ret = _LIB.fat16_read(fd, buf, 1)
+    if ret != -9:
+        record_test_result('read_empty_file', False)
+    ret = _LIB.fat16_close(fd)
     _LIB.linux_release_image()
-    record_test_result('read_empty_file', ret == -9)
+    record_test_result('read_empty_file', ret == 0)
 
 def test_read_small_file(image_path):
     restore_image(image_path)
