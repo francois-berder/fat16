@@ -125,6 +125,24 @@ def test_write_small_file(image_path):
     record_test_result('write_small_file', ret == 0)
     _LIB.linux_release_image()
 
+def test_write_erase_file_content(image_path):
+    restore_image(image_path)
+    create_small_file(image_path, 'HELLO.TXT', 'Hello World')
+    _LIB.linux_load_image(str.encode(image_path))
+    print('----- write erase file content -----')
+    mode = (ctypes.c_char)(str.encode('w'))
+    fd = _LIB.fat16_open(str.encode('HELLO.TXT'), mode)
+    if fd < 0:
+        record_test_result('write_erase_file_content', False)
+    ret = _LIB.fat16_close(fd)
+    record_test_result('write_erase_file_content', ret == 0)
+
+    mount_image(image_path)
+    content = subprocess.check_output(['cat', '/mnt/HELLO.TXT'])
+    record_test_result('write_erase_file_content', 0 == len(content))
+    unmount_image()
+    _LIB.linux_release_image()
+
 def main(argv):
     image_path = 'data/fs.img'
     if len(argv) > 1:
@@ -135,6 +153,7 @@ def main(argv):
     test_read_empty_file(image_path)
     test_read_small_file(image_path)
     test_write_small_file(image_path)
+    test_write_erase_file_content(image_path)
 
     # Print test results
     print('\n\n\n##### TEST RESULTS #####')
