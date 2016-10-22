@@ -3,6 +3,10 @@
 
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 enum FAT_ERROR
 {
     NO_ERROR,
@@ -117,5 +121,10 @@ int fat16_delete(char *filename);
  * there are no more files in the root directory.
  */
 int fat16_ls(int index, char *filename);
+
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
