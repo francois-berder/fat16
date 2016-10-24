@@ -8,6 +8,7 @@
 #include "WriteEraseContentTest.hpp"
 #include "WriteSmallFileTest.hpp"
 #include "WriteLargeFileTest.hpp"
+#include "ReadLargeFileTest.hpp"
 
 #define SECTOR_SIZE (2048)
 
@@ -33,6 +34,13 @@ int main()
     tests.push_back(new WriteLargeFileTest(SECTOR_SIZE+1));
     tests.push_back(new WriteLargeFileTest(2*SECTOR_SIZE+1));
     tests.push_back(new WriteLargeFileTest(10*SECTOR_SIZE+1));
+    tests.push_back(new ReadLargeFileTest(SECTOR_SIZE/2));
+    tests.push_back(new ReadLargeFileTest(SECTOR_SIZE-1));
+    tests.push_back(new ReadLargeFileTest(SECTOR_SIZE));
+    tests.push_back(new ReadLargeFileTest(SECTOR_SIZE+1));
+    tests.push_back(new ReadLargeFileTest(2*SECTOR_SIZE+1));
+    tests.push_back(new ReadLargeFileTest(10*SECTOR_SIZE+1));
+
     for (Test *test : tests) {
         std::cout << "===== " << test->get_name() << " =====" << std::endl;
         test->init();
