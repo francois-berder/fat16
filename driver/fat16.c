@@ -354,10 +354,7 @@ static void move_to_fat_region(uint16_t cluster)
 {
     uint32_t pos = start_fat_region;
 
-    /* Remove 3 from cluster index because cluster 0 to 2 are reserved
-     * and are not represented in the FAT.
-     */
-    pos += (cluster - FIRST_CLUSTER_INDEX_IN_FAT) * 2;
+    pos += cluster * 2;
     LOG("Moving to %08X\n", pos);
     hal_seek(pos);
 }
@@ -499,7 +496,7 @@ static void mark_root_entry_as_available(uint16_t entry_index)
 static void free_cluster_chain(uint16_t cluster)
 {
     /* If the file is empty, the starting cluster variable is equal to 0.
-     * No need to iterate trough the FAT. */
+     * No need to iterate through the FAT. */
     if (cluster == 0)
         return;
 
@@ -639,17 +636,18 @@ static uint16_t read_fat_entry(uint16_t cluster)
 
 static int allocate_cluster(uint16_t cluster)
 {
-    uint16_t next_cluster;
-    /* Find an empty location in the FAT */
-    move_to_fat_region(0);
-    for (next_cluster = 0; next_cluster < data_cluster_count; ++next_cluster) {
+    uint16_t next_cluster = FIRST_CLUSTER_INDEX_IN_FAT;
+    /* Find an empty location in the FAT, skip first 3 entries in the FAT,
+     * because they are reserved.
+     */
+    move_to_fat_region(next_cluster);
+    for (; next_cluster < data_cluster_count-FIRST_CLUSTER_INDEX_IN_FAT; ++next_cluster) {
         uint16_t fat_entry;
         hal_read((uint8_t*)&fat_entry, sizeof(fat_entry));
 
         /* Mark it as end of file */
         if (fat_entry == 0) {
-
-            fat_entry = 0xFFF8;
+            fat_entry = 0xFFFF;
             move_to_fat_region(next_cluster);
             hal_write((uint8_t*)&fat_entry, sizeof(fat_entry));
             break;
@@ -660,8 +658,6 @@ static int allocate_cluster(uint16_t cluster)
         LOG("Could not find an available cluster.\n");
         return -1;
     }
-
-    next_cluster += FIRST_CLUSTER_INDEX_IN_FAT;
 
     /* Update current cluster to point to next one */
     if (cluster != 0) {
