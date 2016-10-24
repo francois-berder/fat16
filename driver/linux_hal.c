@@ -3,7 +3,7 @@
 
 static FILE *image = NULL;
 
-int linux_load_image(char *path)
+int linux_load_image(const char *path)
 {
     if (path == NULL) {
         printf("linux_load_image: Cannot load image with null path\n");
