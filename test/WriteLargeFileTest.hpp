@@ -13,7 +13,7 @@ class WriteLargeFileTest : public Test
 
     private :
 
-        unsigned int m_bytes_count;
+        const unsigned int m_bytes_count;
 
         bool check_content_file(const std::string &filename);
 };
