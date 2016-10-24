@@ -1,3 +1,5 @@
+#include <stdexcept>
+#include "Common.hpp"
 #include "Test.hpp"
 
 
@@ -12,12 +14,13 @@ Test::~Test()
 
 void Test::init()
 {
-
+    restore_image();
+    load_image();
 }
 
 void Test::release()
 {
-
+    release_image();
 }
 
 const std::string Test::get_name() const
