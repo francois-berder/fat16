@@ -9,6 +9,7 @@
 #include "WriteSmallFileTest.hpp"
 #include "WriteLargeFileTest.hpp"
 #include "ReadLargeFileTest.hpp"
+#include "LsTest.hpp"
 
 #define SECTOR_SIZE (2048)
 
@@ -40,6 +41,11 @@ int main()
     tests.push_back(new ReadLargeFileTest(SECTOR_SIZE+1));
     tests.push_back(new ReadLargeFileTest(2*SECTOR_SIZE+1));
     tests.push_back(new ReadLargeFileTest(10*SECTOR_SIZE+1));
+    tests.push_back(new LsTest(0));
+    tests.push_back(new LsTest(1));
+    tests.push_back(new LsTest(128));
+    tests.push_back(new LsTest(256));
+    tests.push_back(new LsTest(511));
 
     for (Test *test : tests) {
         std::cout << "===== " << test->get_name() << " =====" << std::endl;
