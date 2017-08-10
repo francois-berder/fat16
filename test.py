@@ -50,6 +50,9 @@ def check_small_file_content(image_path, filename, expected_content):
     unmount_image()
     return content == expected_content
 
+def check_big_file_content(image_path, filename):
+    return True
+
 def test_init(image_path):
     restore_image(image_path)
     _LIB.linux_load_image(str.encode(image_path))
@@ -125,6 +128,30 @@ def test_write_small_file(image_path):
     record_test_result('write_small_file', ret == 0)
     _LIB.linux_release_image()
 
+def test_write_big_file(image_path):
+    restore_image(image_path)
+    _LIB.linux_load_image(str.encode(image_path))
+    print('----- write big file -----')
+    mode = (ctypes.c_char)(str.encode('w'))
+    fd = _LIB.fat16_open(str.encode('BIG.TXT'), mode)
+    if fd < 0:
+        record_test_result('write_big_file', False)
+
+    # Write 256KB
+    for i in range(256*1024):
+        data = [i % 256]
+        buf = (ctypes.c_uint8 * len(data))(*data)
+        ret = _LIB.fat16_write(fd, buf, len(data))
+        if ret != len(data):
+            record_test_result('write_big_file', False)
+
+    if not check_big_file_content(image_path, 'BIG.TXT'):
+        record_test_result('write_big_file', False)
+
+    ret = _LIB.fat16_close(fd)
+    record_test_result('write_big_file', ret == 0)
+    _LIB.linux_release_image()
+
 def test_write_erase_file_content(image_path):
     restore_image(image_path)
     create_small_file(image_path, 'HELLO.TXT', 'Hello World')
@@ -153,6 +180,7 @@ def main(argv):
     test_read_empty_file(image_path)
     test_read_small_file(image_path)
     test_write_small_file(image_path)
+    test_write_big_file(image_path)
     test_write_erase_file_content(image_path)
 
     # Print test results
