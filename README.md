@@ -12,5 +12,6 @@ $ make
 This creates a shared library libfat16_driver.so, then the test suite must be run as root:
 
 ```sh
-$ sudo ./test.py
+$ sudo ./run_test
 ```
+
