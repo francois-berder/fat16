@@ -764,9 +764,10 @@ int fat16_open(const char *filename, char mode)
 }
 
 
-int fat16_read(uint8_t handle, char *buffer, uint32_t count)
+int fat16_read(uint8_t handle, void *buffer, uint32_t count)
 {
     uint32_t bytes_read_count = 0;
+    uint8_t *bytes = (uint8_t*)buffer;
 
     if (check_handle(handle) == false) {
         LOG("fat16_read: Invalid handle.\n");
@@ -801,7 +802,7 @@ int fat16_read(uint8_t handle, char *buffer, uint32_t count)
         if (chunk_length > handles[handle].remaining_bytes)
             chunk_length = handles[handle].remaining_bytes;
 
-        hal_read((uint8_t*)buffer, chunk_length);
+        hal_read(&bytes[bytes_read_count], chunk_length);
 
         handles[handle].remaining_bytes -= chunk_length;
         handles[handle].offset += chunk_length;
@@ -819,16 +820,16 @@ int fat16_read(uint8_t handle, char *buffer, uint32_t count)
             }
         }
         count -= chunk_length;
-        buffer += chunk_length;
         bytes_read_count += chunk_length;
     }
 
     return bytes_read_count;
 }
 
-int fat16_write(uint8_t handle, char *buffer, uint32_t count)
+int fat16_write(uint8_t handle, const void *buffer, uint32_t count)
 {
     uint32_t bytes_written_count = 0;
+    const uint8_t *bytes = (const uint8_t *)buffer;
 
     if (check_handle(handle) == false) {
         LOG("fat16_write: Invalid handle.\n");
@@ -840,7 +841,7 @@ int fat16_write(uint8_t handle, char *buffer, uint32_t count)
         return -1;
     }
 
-    if (buffer == NULL) {
+    if (bytes == NULL) {
         LOG("fat16_write: Cannot write using null buffer.\n");
         return -1;
     }
@@ -884,10 +885,9 @@ int fat16_write(uint8_t handle, char *buffer, uint32_t count)
         if (chunk_length > bytes_remaining_in_cluster)
             chunk_length = bytes_remaining_in_cluster;
 
-        hal_write((uint8_t*)buffer, chunk_length);
+        hal_write(&bytes[bytes_written_count], chunk_length);
 
         count -= chunk_length;
-        buffer += chunk_length;
         bytes_written_count += chunk_length;
         handles[handle].offset += chunk_length;
     }

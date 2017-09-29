@@ -56,23 +56,23 @@ int fat16_open(const char *filename, char mode);
  * function returns -END_OF_FILE_REACHED.
  *
  * @param[in] handle Positive number returned by fat16_open.
- * @param[out] buffer Pointer to an array of characters.
+ * @param[out] buffer Pointer to a buffer.
  * @param[in] Number of bytes to read.
  * @return Number of bytes read from file. The return value might be less than
  * count because the end of the file is reached.
  */
-int fat16_read(uint8_t handle, char *buffer, uint32_t count);
+int fat16_read(uint8_t handle, void *buffer, uint32_t count);
 
 /**
  * @brief Write data to file.
  *
  * @param[in] handle Positive number returned by fat16_open.
- * @param[in] buffer Pointer to an array of characters.
+ * @param[in] buffer Pointer to a buffer.
  * @param[in] Number of bytes to read.
  * @return Number of bytes written to file. The return value might be less than
  * count if there is no space left.
  */
-int fat16_write(uint8_t handle, char *buffer, uint32_t count);
+int fat16_write(uint8_t handle, const void *buffer, uint32_t count);
 
 /**
  * @brief Release the handle.
