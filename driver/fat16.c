@@ -17,7 +17,7 @@
 #define WRITE_MODE      (false)
 
 #define FIRST_CLUSTER_INDEX_IN_FAT     (3)
-
+#define MAX_BYTES_PER_CLUSTER           (((unsigned long)32) * (unsigned long)1024)
 #define ROOT_DIR_VFAT_ENTRY             (0x0F)
 #define ROOT_DIR_AVAILABLE_ENTRY        (0xE5)
 
@@ -121,7 +121,7 @@ static int fat16_read_bpb(void)
     &&  bpb.sectors_per_cluster != 128)
         return -INVALID_SECTOR_PER_CLUSTER;
 
-    if (bpb.bytes_per_sector * bpb.sectors_per_cluster > 32*1024)
+    if (bpb.bytes_per_sector * bpb.sectors_per_cluster > MAX_BYTES_PER_CLUSTER)
         return -INVALID_BYTES_PER_CLUSTER;
 
     hal_read((uint8_t*)&bpb.reversed_sector_count, 2);
@@ -325,8 +325,11 @@ static uint8_t find_available_handle(void)
  */
 static void move_to_data_region(uint16_t cluster, uint16_t offset)
 {
+    uint32_t tmp = cluster - 2;
+    tmp *= bpb.sectors_per_cluster;
+    tmp *= bpb.bytes_per_sector;
     uint32_t pos = start_data_region;
-    pos += ((cluster - 2) * bpb.sectors_per_cluster) * bpb.bytes_per_sector;
+    pos += tmp;
     pos += offset;
     LOG("Moving to %08X\n", pos);
     hal_seek(pos);
@@ -384,18 +387,20 @@ static long find_root_directory_entry(char *filename)
 
         /* Check if we reach end of list of root directory entries */
         if (e.filename[0] == 0)
-            return -1;
+            break;
 
         /* Ignore any VFAT entry */
         if ((e.attribute & ROOT_DIR_VFAT_ENTRY) == ROOT_DIR_VFAT_ENTRY)
             continue;
 
-        if (memcmp(filename, e.filename, sizeof(e.filename)) == 0)
-            return i;
+        if (memcmp(filename, e.filename, sizeof(e.filename)) == 0) {
+            ret = i;
+            break;
+        }
     }
 
     LOG("File %s not found.\n", filename);
-    return -1;
+    return ret;
 }
 
 /**
@@ -407,7 +412,7 @@ static long find_root_directory_entry(char *filename)
  */
 static int fat16_open_read(uint8_t handle, char *filename)
 {
-    int entry_index = 0;
+    long entry_index = 0;
     struct dir_entry entry;
 
     /* Check that it is not opened for writing operations. */
@@ -853,7 +858,7 @@ int fat16_write(uint8_t handle, char *buffer, uint32_t count)
         /* Check if we need to allocate a new cluster */
         if (handles[handle].cluster == 0
         ||  bytes_remaining_in_cluster == 0) {
-            int new_cluster = allocate_cluster(handles[handle].cluster);
+            long new_cluster = allocate_cluster(handles[handle].cluster);
             if (new_cluster < 0)
                 return -1;
 
