@@ -45,7 +45,7 @@ bool ReadLargeFileTest::run()
 
     /* Check if we reached end of file */
     char buf = 0;
-    if (fat16_read(fd, &buf, sizeof(buf)) != -END_OF_FILE_REACHED)
+    if (fat16_read(fd, &buf, sizeof(buf)) != 0)
         return false;
 
     if (fat16_close(fd) < 0)

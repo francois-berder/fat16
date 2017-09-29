@@ -9,7 +9,6 @@ extern "C" {
 
 enum FAT_ERROR
 {
-    NO_ERROR,
     INVALID_JUMP_INSTRUCTION,
     INVALID_BYTES_PER_SECTOR,
     INVALID_SECTOR_PER_CLUSTER,
@@ -17,8 +16,7 @@ enum FAT_ERROR
     INVALID_RESERVED_SECTOR_COUNT,
     INVALID_ROOT_ENTRY_COUNT,
     INVALID_SECTOR_COUNT,
-    INVALID_FAT_TYPE,
-    END_OF_FILE_REACHED,
+    INVALID_FAT_TYPE
 };
 
 /**
@@ -53,7 +51,7 @@ int fat16_open(const char *filename, char mode);
  * @brief Read data from file.
  *
  * If the end of file is reached and there are no more bytes to be read, this
- * function returns -END_OF_FILE_REACHED.
+ * function returns 0.
  *
  * @param[in] handle Positive number returned by fat16_open.
  * @param[out] buffer Pointer to a buffer.

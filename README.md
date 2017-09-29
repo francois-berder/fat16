@@ -52,7 +52,7 @@ void print_file_content(void)
         char buffer[256];
         int i, n;
         n = fat16_read(fd, buffer, sizeof(buffer));
-        if (n == -END_OF_FILE_REACHED) {
+        if (n == 0) {   /* End of file reached */
             break;
         } else if (n < 0) {
             fprintf(stderr, "Error %d while reading\n", -n);

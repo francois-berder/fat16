@@ -28,7 +28,7 @@ bool ReadEmptyFileTest::run()
 
     char buf;
     int ret = fat16_read(fd, &buf, 1);
-    if (-ret != END_OF_FILE_REACHED)
+    if (ret != 0)
         return false;
 
     if (fat16_close(fd) < 0)
