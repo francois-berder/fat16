@@ -84,4 +84,3 @@ int hal_write(const uint8_t *buffer, uint32_t length)
 
     return fflush(image);
 }
-
