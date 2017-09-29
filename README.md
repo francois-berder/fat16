@@ -36,3 +36,46 @@ This creates a shared library libfat16_driver.so, then the test suite must be ru
 $ sudo ./run_test
 ```
 
+#### Examples
+
+Reading a file:
+```c
+void print_file_content(void)
+{
+    int fd = fat16_open("DATA.TXT", 'r');
+    if (fd < 0) {
+        fprintf(stderr, "Failed to read DATA.TXT\n");
+        return;
+    }
+
+    while (1) {
+        char buffer[256];
+        int i, n;
+        n = fat16_read(fd, buffer, sizeof(buffer));
+        if (n == -END_OF_FILE_REACHED) {
+            break;
+        } else if (n < 0) {
+            fprintf(stderr, "Error %d while reading\n", -n);
+        }
+
+        for (i = 0; i < n; ++i)
+            printf("%c", buffer[i]);
+    }
+
+    fat16_close(fd);
+}
+```
+
+Listing files in root directory:
+```c
+void list_files(void)
+{
+    char filename[13];
+    int i = 0;
+    while(i >= 0) {
+        i = fat16_ls(i, filename);
+        if (i >= 0)
+            printf("%s\n", filename);
+    }
+}
+```
