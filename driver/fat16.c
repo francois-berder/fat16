@@ -217,7 +217,7 @@ static bool is_character_valid(char c)
  * @param[in] filename arbitrary long string
  * @return 0 if successful, -1 otherwise
  */
-static int make_fat_filename(char *fat_filename, char *filename)
+static int make_fat_filename(char *fat_filename, const char *filename)
 {
     uint8_t i = 0;
     uint8_t sep;
@@ -733,7 +733,7 @@ int fat16_init(void)
     return 0;
 }
 
-int fat16_open(char *filename, char mode)
+int fat16_open(const char *filename, char mode)
 {
     char fat_filename[11];
     uint8_t handle = INVALID_HANDLE;
@@ -909,7 +909,7 @@ int fat16_close(uint8_t handle)
     return 0;
 }
 
-int fat16_delete(char *filename)
+int fat16_delete(const char *filename)
 {
     char fat_filename[11];
 

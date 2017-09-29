@@ -47,7 +47,7 @@ int fat16_init(void);
  * @return A handle of the file (positive integer) if it could open it.
  * Otherwise, a negative value is returned.
  */
-int fat16_open(char *filename, char mode);
+int fat16_open(const char *filename, char mode);
 
 /**
  * @brief Read data from file.
@@ -91,7 +91,7 @@ int fat16_close(uint8_t handle);
  * @param[in] filename
  * @return 0 if successful, -1 otherwise
  */
-int fat16_delete(char *filename);
+int fat16_delete(const char *filename);
 
 /**
  * @brief Gives the name of a file in the root directory.
