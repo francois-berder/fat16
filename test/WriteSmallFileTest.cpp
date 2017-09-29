@@ -21,7 +21,7 @@ bool WriteSmallFileTest::run()
 
     std::string content = "Hello World!";
     int ret = fat16_write(fd, (char*)content.c_str(), content.length());
-    if (ret != content.length())
+    if (ret != (int)content.length())
         return false;
 
     if (fat16_close(fd) < 0)
@@ -41,7 +41,7 @@ bool WriteSmallFileTest::check_content_file(const std::string &filename, const s
     std::ifstream file(path);
 
     file.seekg(0, std::ios::end);
-    if (file.tellg() != content.length())
+    if (file.tellg() != (int)content.length())
         result = false;
 
     file.seekg(0, std::ios::beg);
