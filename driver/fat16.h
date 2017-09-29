@@ -120,7 +120,7 @@ int fat16_delete(char *filename);
  * @return a positive number if successful, -1 if an error occurs and -2 if
  * there are no more files in the root directory.
  */
-int fat16_ls(int index, char *filename);
+long fat16_ls(long index, char *filename);
 
 
 #ifdef __cplusplus
