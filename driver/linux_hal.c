@@ -67,7 +67,7 @@ int hal_seek(int offset)
     return fseek(image, offset, SEEK_SET);
 }
 
-int hal_write(uint8_t *buffer, uint32_t length)
+int hal_write(const uint8_t *buffer, uint32_t length)
 {
     if (buffer == NULL) {
         printf("linux_write: Cannot write with null buffer\n");
