@@ -269,6 +269,7 @@ static int make_fat_filename(char *fat_filename, char *filename)
     return 0;
 }
 
+#ifndef NDEBUG
 static void dump_root_entry(struct dir_entry e)
 {
     LOG("filename: %s\n", e.filename);
@@ -289,6 +290,7 @@ static void dump_root_entry(struct dir_entry e)
     LOG("starting cluster: %u\n", e.starting_cluster);
     LOG("size: %u\n", e.size);
 }
+#endif
 
 static bool is_file_opened(char *filename, bool mode)
 {
@@ -378,7 +380,7 @@ static long find_root_directory_entry(char *filename)
         struct dir_entry e;
         hal_read((uint8_t*)&e, sizeof(struct dir_entry));
 #ifndef NDEBUG
-        //dump_root_entry(e);
+        dump_root_entry(e);
 #endif
 
         /* Skip available entry */
