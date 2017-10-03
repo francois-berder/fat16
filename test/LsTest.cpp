@@ -33,15 +33,13 @@ bool LsTest::run()
 
     unsigned int files_count = 0;
     char filename[13];
-    int i = 0;
-    while(i >= 0) {
-        i = fat16_ls(i, filename);
-        if (i >= 0) {
-            ++files_count;
-            printf("Found file: %s\n", filename);
-        }
+    uint16_t i = 0;
+    int ret = 0;
+    while((ret = fat16_ls(&i, filename)) == 0) {
+        ++files_count;
+        printf("Found file: %s\n", filename);
     }
-    if (i != -2)
+    if (ret != -2)
         return false;
 
     return files_count == m_files_count;

@@ -17,7 +17,7 @@
 #define WRITE_MODE      (false)
 
 #define FIRST_CLUSTER_INDEX_IN_FAT     (3)
-#define MAX_BYTES_PER_CLUSTER           (((unsigned long)32) * (unsigned long)1024)
+#define MAX_BYTES_PER_CLUSTER           (32768LU)
 #define ROOT_DIR_VFAT_ENTRY             (0x0F)
 #define ROOT_DIR_AVAILABLE_ENTRY        (0xE5)
 
@@ -368,13 +368,13 @@ static void move_to_fat_region(uint16_t cluster)
 /**
  * @brief Find the index of an entry based on its name.
  *
+ * @param[out] entry_index
  * @param[in] filename name of the file in 8.3 format
- * @return -1 if it cannot find the entry, otherwise give the index (positive number)
+ * @return -1 if it cannot find the entry, 0 if successful
  */
-static long find_root_directory_entry(char *filename)
+static int find_root_directory_entry(uint16_t *entry_index, char *filename)
 {
     uint16_t i = 0;
-    long ret = -1;
 
     move_to_root_directory_region(0);
     for (i = 0; i < bpb.root_entry_count; ++i) {
@@ -397,13 +397,13 @@ static long find_root_directory_entry(char *filename)
             continue;
 
         if (memcmp(filename, e.filename, sizeof(e.filename)) == 0) {
-            ret = i;
-            break;
+            *entry_index = i;
+            return 0;
         }
     }
 
     LOG("File %s not found.\n", filename);
-    return ret;
+    return -1;
 }
 
 /**
@@ -415,7 +415,7 @@ static long find_root_directory_entry(char *filename)
  */
 static int fat16_open_read(uint8_t handle, char *filename)
 {
-    long entry_index = 0;
+    uint16_t entry_index = 0;
     struct dir_entry entry;
 
     /* Check that it is not opened for writing operations. */
@@ -425,7 +425,7 @@ static int fat16_open_read(uint8_t handle, char *filename)
     }
 
     /* Find the file in the root directory */
-    if ((entry_index = find_root_directory_entry(filename)) < 0)
+    if (find_root_directory_entry(&entry_index, filename) < 0)
         return -1;
 
     move_to_root_directory_region(entry_index);
@@ -445,9 +445,11 @@ static int fat16_open_read(uint8_t handle, char *filename)
 /**
  * @brief Find an unused entry in the root directory.
  *
- * @return -1 if there is no available entry in the root directory, a positive number otherwise.
+ * @param[out] entry_index
+ * @retval -1 if there is no available entry in the root directory,
+ * @reval 0 if successful
  */
-static long find_available_entry_in_root_directory(void)
+static int find_available_entry_in_root_directory(uint16_t *entry_index)
 {
     uint16_t i = 0;
 
@@ -456,9 +458,10 @@ static long find_available_entry_in_root_directory(void)
         move_to_root_directory_region(i);
         hal_read(&tmp, sizeof(tmp));
 
-        if (tmp == 0 || tmp == ROOT_DIR_AVAILABLE_ENTRY)
-            return i;
-
+        if (tmp == 0 || tmp == ROOT_DIR_AVAILABLE_ENTRY) {
+            *entry_index = i;
+            return 0;
+        }
         ++i;
     } while (i < bpb.root_entry_count);
 
@@ -541,12 +544,12 @@ static void free_cluster_chain(uint16_t cluster)
  */
 static int delete_file(char *fat_filename)
 {
-    long entry_index = 0;
+    uint16_t entry_index = 0;
     uint32_t pos = 0;
     uint16_t starting_cluster = 0;
 
     /* Find the file in the root directory */
-    if ((entry_index = find_root_directory_entry(fat_filename)) < 0)
+    if (find_root_directory_entry(&entry_index, fat_filename) < 0)
         return -1;
 
     mark_root_entry_as_available(entry_index);
@@ -573,7 +576,7 @@ static int delete_file(char *fat_filename)
 static int fat16_open_write(uint8_t handle, char *filename)
 {
     struct dir_entry entry;
-    long entry_index = 0;
+    uint16_t entry_index = 0;
 
     /* Check that it is not opened for reading operations. */
     if (is_file_opened(filename, READ_MODE)) {
@@ -596,7 +599,7 @@ static int fat16_open_write(uint8_t handle, char *filename)
     delete_file(filename);
 
     /* Find a location in the root directory region */
-    if ((entry_index = find_available_entry_in_root_directory()) < 0)
+    if (find_available_entry_in_root_directory(&entry_index) < 0)
         return -1;
 
     /* Create an entry in the root directory */
@@ -647,7 +650,7 @@ static uint16_t read_fat_entry(uint16_t cluster)
     return fat_entry;
 }
 
-static long allocate_cluster(uint16_t cluster)
+static int allocate_cluster(uint16_t *new_cluster, uint16_t cluster)
 {
     uint16_t next_cluster = FIRST_CLUSTER_INDEX_IN_FAT;
 
@@ -679,7 +682,8 @@ static long allocate_cluster(uint16_t cluster)
         hal_write((uint8_t *)&next_cluster, sizeof(next_cluster));
     }
 
-    return next_cluster;
+    *new_cluster = next_cluster;
+    return 0;
 }
 
 /**
@@ -868,8 +872,8 @@ int fat16_write(uint8_t handle, const void *buffer, uint32_t count)
         /* Check if we need to allocate a new cluster */
         if (handles[handle].cluster == 0
             || bytes_remaining_in_cluster == 0) {
-            long new_cluster = allocate_cluster(handles[handle].cluster);
-            if (new_cluster < 0)
+            uint16_t new_cluster = 0;
+            if (allocate_cluster(&new_cluster, handles[handle].cluster) < 0)
                 return -1;
 
             /* If the file was empty, update cluster in root directory entry */
@@ -937,12 +941,12 @@ int fat16_delete(const char *filename)
     return delete_file(fat_filename);
 }
 
-long fat16_ls(long index, char *filename)
+int fat16_ls(uint16_t *index, char *filename)
 {
     uint8_t name_length = 0, ext_length = 0;
     char fat_filename[11];
 
-    if (index < 0 || index >= bpb.root_entry_count)
+    if (*index >= bpb.root_entry_count)
         return -1;
 
     if (filename == NULL)
@@ -953,14 +957,14 @@ long fat16_ls(long index, char *filename)
            || ((uint8_t)fat_filename[0]) == ROOT_DIR_AVAILABLE_ENTRY) {
         uint8_t attribute = 0;
 
-        move_to_root_directory_region(index);
+        move_to_root_directory_region(*index);
         hal_read((uint8_t *)fat_filename, 11);
-        ++index;
+        ++(*index);
 
         /* If this condition is true, the end of the root directory is reached.
          * and there are no more files to be found.
          */
-        if (index == bpb.root_entry_count)
+        if (*index == bpb.root_entry_count)
             return -2;
 
         /* Also reading attribute to skip any vfat entry. */
@@ -998,5 +1002,5 @@ long fat16_ls(long index, char *filename)
 
     filename[name_length + 1 + ext_length] = '\0';
 
-    return index;
+    return 0;
 }

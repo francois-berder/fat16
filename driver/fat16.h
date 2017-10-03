@@ -97,18 +97,16 @@ int fat16_delete(const char *filename);
  *
  * @code{.c}
  * char filename[13];
- * int i = 0;
- * while(i >= 0) {
- *     i = fat16_ls(i, filename);
- *     if (i >= 0)
- *         printf("%s\n", filename);
+ * uint16_t i = 0;
+ * while(fat16_ls(&i, filename) == 0) {
+ *      printf("%s\n", filename);
  * }
  * @endcode
  *
  * It is then possible to get the complete list of files in the root directory
  * without using too much memory.
  *
- * @param[in] index Index of the entry to search for a file.
+ * @param[in/out] index Index of the entry to search for a file.
  * @param[out] filename Name in format:
  * <name> + '.' + <extension> + '\0'
  * name and extension are trimmed.
@@ -117,7 +115,7 @@ int fat16_delete(const char *filename);
  * @return a positive number if successful, -1 if an error occurs and -2 if
  * there are no more files in the root directory.
  */
-long fat16_ls(long index, char *filename);
+int fat16_ls(uint16_t *index, char *filename);
 
 
 #ifdef __cplusplus
