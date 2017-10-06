@@ -2,14 +2,10 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
+#include "debug.h"
 #include "fat16.h"
 #include "hal.h"
 
-#ifndef NDEBUG
-#define LOG(...)        printf(__VA_ARGS__)
-#else
-#define LOG(...)
-#endif
 
 #define INVALID_HANDLE  (255)
 #define HANDLE_COUNT    (16)        /* Must not be greater than 254 */
@@ -80,7 +76,7 @@ static int fat16_read_bpb(void)
     memset(&bpb, 0, sizeof(struct fat16_bpb));
 
     /* Parse boot sector */
-    LOG("#######   BPB   #######\n");
+    FAT16DBG("FAT16: #######   BPB   #######\n");
     /* jump instruction on 3 bytes.
      * Either: 0xEB,0x??, 0x90
      * or: 0xE9,0x??,0x??
@@ -99,9 +95,9 @@ static int fat16_read_bpb(void)
     }
 
     hal_read((uint8_t *)&bpb.oem_name, 8);
-    LOG("OEM NAME: %s\n", bpb.oem_name);
+    FAT16DBG("FAT16: OEM NAME: %s\n", bpb.oem_name);
     hal_read((uint8_t *)&bpb.bytes_per_sector, 2);
-    LOG("bytes per sector: %u\n", bpb.bytes_per_sector);
+    FAT16DBG("FAT16: bytes per sector: %u\n", bpb.bytes_per_sector);
     if (bpb.bytes_per_sector != 512
         && bpb.bytes_per_sector != 1024
         && bpb.bytes_per_sector != 2048
@@ -109,7 +105,7 @@ static int fat16_read_bpb(void)
         return -INVALID_BYTES_PER_SECTOR;
 
     hal_read(&bpb.sectors_per_cluster, 1);
-    LOG("sectors per cluster: %u\n", bpb.sectors_per_cluster);
+    FAT16DBG("FAT16: sectors per cluster: %u\n", bpb.sectors_per_cluster);
     if (bpb.sectors_per_cluster != 1
         && bpb.sectors_per_cluster != 2
         && bpb.sectors_per_cluster != 4
@@ -124,15 +120,15 @@ static int fat16_read_bpb(void)
         return -INVALID_BYTES_PER_CLUSTER;
 
     hal_read((uint8_t *)&bpb.reversed_sector_count, 2);
-    LOG("reserved sector count: %u\n", bpb.reversed_sector_count);
+    FAT16DBG("FAT16: reserved sector count: %u\n", bpb.reversed_sector_count);
     if (bpb.reversed_sector_count != 1)
         return -INVALID_RESERVED_SECTOR_COUNT;
 
     hal_read(&bpb.num_fats, 1);
-    LOG("num fats: %u\n", bpb.num_fats);
+    FAT16DBG("FAT16: num fats: %u\n", bpb.num_fats);
 
     hal_read((uint8_t *)&bpb.root_entry_count, 2);
-    LOG("root entry count: %u\n", bpb.root_entry_count);
+    FAT16DBG("FAT16: root entry count: %u\n", bpb.root_entry_count);
     if ((((32 * bpb.root_entry_count) / bpb.bytes_per_sector) & 0x1) != 0)
         return -INVALID_ROOT_ENTRY_COUNT;
 
@@ -143,7 +139,7 @@ static int fat16_read_bpb(void)
     hal_read_byte(&data);
 
     hal_read((uint8_t *)&bpb.fat_size, 2);
-    LOG("fat size: %u\n", bpb.fat_size);
+    FAT16DBG("FAT16: fat size: %u\n", bpb.fat_size);
 
     /* Skip sector per track for int 0x13 */
     hal_read_byte(&data);
@@ -167,7 +163,7 @@ static int fat16_read_bpb(void)
 
     if (bpb.sector_count == 0)
         bpb.sector_count = sector_count_32b;
-    LOG("sector count: %u\n", bpb.sector_count);
+    FAT16DBG("FAT16: sector count: %u\n", bpb.sector_count);
 
     /* Skip drive number */
     hal_read_byte(&data);
@@ -178,13 +174,13 @@ static int fat16_read_bpb(void)
     hal_read_byte(&data);
     if (data == 0x29) {
         hal_read((uint8_t *)&bpb.volume_id, 4);
-        LOG("volume ID: %u\n", bpb.volume_id);
+        FAT16DBG("FAT16: volume ID: %u\n", bpb.volume_id);
 
         hal_read((uint8_t *)&bpb.label, 11);
-        LOG("label: %s\n", bpb.label);
+        FAT16DBG("FAT16: label: %s\n", bpb.label);
 
         hal_read((uint8_t *)bpb.fs_type, 8);
-        LOG("fs type: %s\n", bpb.fs_type);
+        FAT16DBG("FAT16: fs type: %s\n", bpb.fs_type);
     }
 
     return 0;
@@ -231,7 +227,7 @@ static int make_fat_filename(char *fat_filename, const char *filename)
         }
 
         if (!is_character_valid(filename[i])) {
-            LOG("Invalid character in filename: %s\n", filename);
+            FAT16DBG("FAT16: Invalid character in filename: %s\n", filename);
             return -1;
         }
     }
@@ -253,7 +249,7 @@ static int make_fat_filename(char *fat_filename, const char *filename)
             return -1;
 
         if (!is_character_valid(filename[sep + 1 + i])) {
-            LOG("Invalid character in filename: %s\n", filename);
+            FAT16DBG("FAT16: Invalid character in filename: %s\n", filename);
             return -1;
         }
 
@@ -271,23 +267,23 @@ static int make_fat_filename(char *fat_filename, const char *filename)
 #ifndef NDEBUG
 static void dump_root_entry(struct dir_entry e)
 {
-    LOG("filename: %s\n", e.filename);
-    LOG("attribute: ");
+    FAT16DBG("FAT16: filename: %s\n", e.filename);
+    FAT16DBG("FAT16: attribute: ");
     if (e.attribute & READ_ONLY)
-        LOG("read-only ");
+        FAT16DBG("FAT16: read-only ");
     if (e.attribute & HIDDEN)
-        LOG("hidden ");
+        FAT16DBG("FAT16: hidden ");
     if (e.attribute & SYSTEM)
-        LOG("system ");
+        FAT16DBG("FAT16: system ");
     if (e.attribute & VOLUME)
-        LOG("volume ");
+        FAT16DBG("FAT16: volume ");
     if (e.attribute & SUBDIR)
-        LOG("subdir ");
+        FAT16DBG("FAT16: subdir ");
     if (e.attribute & ARCHIVE)
-        LOG("archive ");
-    LOG("\n");
-    LOG("starting cluster: %u\n", e.starting_cluster);
-    LOG("size: %u\n", e.size);
+        FAT16DBG("FAT16: archive ");
+    FAT16DBG("FAT16: \n");
+    FAT16DBG("FAT16: starting cluster: %u\n", e.starting_cluster);
+    FAT16DBG("FAT16: size: %u\n", e.size);
 }
 #endif
 
@@ -333,7 +329,7 @@ static void move_to_data_region(uint16_t cluster, uint16_t offset)
     uint32_t pos = start_data_region;
     pos += tmp;
     pos += offset;
-    LOG("Moving to %08X\n", pos);
+    FAT16DBG("FAT16: Moving to %08X\n", pos);
     hal_seek(pos);
 }
 
@@ -347,7 +343,7 @@ static void move_to_root_directory_region(uint16_t entry_index)
     uint32_t pos = start_root_directory_region;
 
     pos += entry_index * 32;
-    LOG("Moving to %08X\n", pos);
+    FAT16DBG("FAT16: Moving to %08X\n", pos);
     hal_seek(pos);
 }
 
@@ -361,7 +357,7 @@ static void move_to_fat_region(uint16_t cluster)
     uint32_t pos = start_fat_region;
 
     pos += cluster * 2;
-    LOG("Moving to %08X\n", pos);
+    FAT16DBG("FAT16: Moving to %08X\n", pos);
     hal_seek(pos);
 }
 
@@ -402,7 +398,7 @@ static int find_root_directory_entry(uint16_t *entry_index, char *filename)
         }
     }
 
-    LOG("File %s not found.\n", filename);
+    FAT16DBG("FAT16: File %s not found.\n", filename);
     return -1;
 }
 
@@ -420,7 +416,7 @@ static int fat16_open_read(uint8_t handle, char *filename)
 
     /* Check that it is not opened for writing operations. */
     if (is_file_opened(filename, WRITE_MODE)) {
-        LOG("Cannot read from file while writing to it.\n");
+        FAT16DBG("FAT16: Cannot read from file while writing to it.\n");
         return -1;
     }
 
@@ -558,7 +554,7 @@ static int delete_file(char *fat_filename)
     pos = start_root_directory_region;
     pos += entry_index * 32;
     pos += CLUSTER_OFFSET_ROOT_DIR_ENTRY;
-    LOG("Moving to %08X\n", pos);
+    FAT16DBG("FAT16: Moving to %08X\n", pos);
     hal_seek(pos);
     hal_read((uint8_t *)&starting_cluster, sizeof(starting_cluster));
     free_cluster_chain(starting_cluster);
@@ -580,7 +576,7 @@ static int fat16_open_write(uint8_t handle, char *filename)
 
     /* Check that it is not opened for reading operations. */
     if (is_file_opened(filename, READ_MODE)) {
-        LOG("Cannot write to file while reading from it.\n");
+        FAT16DBG("FAT16: Cannot write to file while reading from it.\n");
         return -1;
     }
 
@@ -589,7 +585,7 @@ static int fat16_open_write(uint8_t handle, char *filename)
      * handle.
      */
     if (is_file_opened(filename, WRITE_MODE)) {
-        LOG("Cannot write to file already opened in write mode.\n");
+        FAT16DBG("FAT16: Cannot write to file already opened in write mode.\n");
         return -1;
     }
 
@@ -672,7 +668,7 @@ static int allocate_cluster(uint16_t *new_cluster, uint16_t cluster)
     }
 
     if (next_cluster == data_cluster_count) {
-        LOG("Could not find an available cluster.\n");
+        FAT16DBG("FAT16: Could not find an available cluster.\n");
         return -1;
     }
 
@@ -719,12 +715,12 @@ int fat16_init(void)
         return ret;
 
     root_directory_sector_count = (bpb.root_entry_count * 32) / bpb.bytes_per_sector;
-    LOG("root directory sector count: %u\n", root_directory_sector_count);
+    FAT16DBG("FAT16: root directory sector count: %u\n", root_directory_sector_count);
 
     /* Find number of sectors in data region */
     data_sector_count = bpb.sector_count - (bpb.reversed_sector_count + (bpb.num_fats * bpb.fat_size) + root_directory_sector_count);
     data_cluster_count = data_sector_count / bpb.sectors_per_cluster;
-    LOG("data cluster count: %u\n", data_cluster_count);
+    FAT16DBG("FAT16: data cluster count: %u\n", data_cluster_count);
 
     if (data_cluster_count < 4085
         || data_cluster_count >= 65525)
@@ -734,9 +730,9 @@ int fat16_init(void)
     start_root_directory_region = start_fat_region + (bpb.num_fats * bpb.fat_size) * bpb.bytes_per_sector;
     start_data_region = start_root_directory_region + (root_directory_sector_count * bpb.bytes_per_sector);
 
-    LOG("start_fat_region=%08X\n", start_fat_region);
-    LOG("start_root_directory_region=%08X\n", start_root_directory_region);
-    LOG("start_data_region=%08X\n", start_data_region);
+    FAT16DBG("FAT16: start_fat_region=%08X\n", start_fat_region);
+    FAT16DBG("FAT16: start_root_directory_region=%08X\n", start_root_directory_region);
+    FAT16DBG("FAT16: start_data_region=%08X\n", start_data_region);
 
     /* Make sure that all handles are available */
     memset(handles, 0, sizeof(handles));
@@ -750,18 +746,18 @@ int fat16_open(const char *filename, char mode)
     uint8_t handle = INVALID_HANDLE;
 
     if (mode != 'r' && mode != 'w') {
-        LOG("Invalid mode.\n");
+        FAT16DBG("FAT16: Invalid mode.\n");
         return -1;
     }
 
     if (filename == NULL) {
-        LOG("Cannot open a file with a null path string.\n");
+        FAT16DBG("FAT16: Cannot open a file with a null path string.\n");
         return -1;
     }
 
     handle = find_available_handle();
     if (handle == INVALID_HANDLE) {
-        LOG("No available handle found.\n");
+        FAT16DBG("FAT16: No available handle found.\n");
         return -1;
     }
 
@@ -781,12 +777,12 @@ int fat16_read(uint8_t handle, void *buffer, uint32_t count)
     uint8_t *bytes = (uint8_t *)buffer;
 
     if (check_handle(handle) == false) {
-        LOG("fat16_read: Invalid handle.\n");
+        FAT16DBG("FAT16: fat16_read: Invalid handle.\n");
         return -1;
     }
 
     if (handles[handle].read_mode != READ_MODE) {
-        LOG("fat16_read: Cannot read with handle in write mode.\n");
+        FAT16DBG("FAT16: fat16_read: Cannot read with handle in write mode.\n");
         return -1;
     }
 
@@ -843,17 +839,17 @@ int fat16_write(uint8_t handle, const void *buffer, uint32_t count)
     const uint8_t *bytes = (const uint8_t *)buffer;
 
     if (check_handle(handle) == false) {
-        LOG("fat16_write: Invalid handle.\n");
+        FAT16DBG("FAT16: fat16_write: Invalid handle.\n");
         return -1;
     }
 
     if (handles[handle].read_mode != WRITE_MODE) {
-        LOG("fat16_write: Cannot write with handle in read mode.\n");
+        FAT16DBG("FAT16: fat16_write: Cannot write with handle in read mode.\n");
         return -1;
     }
 
     if (bytes == NULL) {
-        LOG("fat16_write: Cannot write using null buffer.\n");
+        FAT16DBG("FAT16: fat16_write: Cannot write using null buffer.\n");
         return -1;
     }
 
@@ -912,7 +908,7 @@ int fat16_write(uint8_t handle, const void *buffer, uint32_t count)
 int fat16_close(uint8_t handle)
 {
     if (check_handle(handle) == false) {
-        LOG("fat16_write: Invalid handle.\n");
+        FAT16DBG("FAT16: fat16_write: Invalid handle.\n");
         return -1;
     }
 
@@ -925,7 +921,7 @@ int fat16_delete(const char *filename)
     char fat_filename[11];
 
     if (filename == NULL) {
-        LOG("Cannot open a file with a null path string.\n");
+        FAT16DBG("FAT16: Cannot open a file with a null path string.\n");
         return -1;
     }
 
@@ -934,7 +930,7 @@ int fat16_delete(const char *filename)
 
     if (is_file_opened(fat_filename, READ_MODE)
         || is_file_opened(fat_filename, WRITE_MODE)) {
-        LOG("Cannot delete a file currently opened.\n");
+        FAT16DBG("FAT16: Cannot delete a file currently opened.\n");
         return -1;
     }
 
