@@ -27,6 +27,9 @@ int fat16_get_short_filename(char *filename, const char *path)
     uint8_t i = 0;
     uint8_t sep;
 
+    if (path[0] == '/')
+        ++path;
+
     /* Find position of . (marker between name and extension) */
     for (i = 0; i < 9; ++i) {
         if (path[i] == '\0')
