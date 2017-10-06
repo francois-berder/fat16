@@ -1,10 +1,10 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
-#include <ctype.h>
 #include "debug.h"
 #include "fat16.h"
 #include "hal.h"
+#include "path.h"
 
 
 #define INVALID_HANDLE  (255)
@@ -183,84 +183,6 @@ static int fat16_read_bpb(void)
         FAT16DBG("FAT16: fs type: %s\n", bpb.fs_type);
     }
 
-    return 0;
-}
-
-
-static bool is_character_valid(char c)
-{
-    return ('a' <= c && c <= 'z')
-           || ('A' <= c && c <= 'Z')
-           || ('0' <= c && c <= '9')
-           || c == '#'
-           || c == '$'
-           || c == '%'
-           || c == '&'
-           || c == '\''
-           || c == '('
-           || c == ')'
-           || c == '-'
-           || c == '@';
-}
-
-/**
- * @brief Convert filename to 8.3 short FAT name.
- *
- * Example "hello.txt" to "HELLO   TXT"
- *
- * @param[out] fat_filename 11 long char array
- * @param[in] filename arbitrary long string
- * @return 0 if successful, -1 otherwise
- */
-static int make_fat_filename(char *fat_filename, const char *filename)
-{
-    uint8_t i = 0;
-    uint8_t sep;
-
-    /* Find position of . (marker between name and extension) */
-    for (i = 0; i < 9; ++i) {
-        if (filename[i] == '\0')
-            return -1;
-        if (filename[i] == '.') {
-            sep = i;
-            break;
-        }
-
-        if (!is_character_valid(filename[i])) {
-            FAT16DBG("FAT16: Invalid character in filename: %s\n", filename);
-            return -1;
-        }
-    }
-
-    /* If it cannot find . in the first 9 characters then the name is more
-     * than 8 characters long which is forbidden. */
-    if (i == 9)
-        return -1;
-
-    /* Copy name */
-    for (i = 0; i < sep; ++i)
-        fat_filename[i] = toupper(filename[i]);
-
-    memset(&fat_filename[sep], ' ', 8 - sep);
-
-    /* Copy extension */
-    for (i = 0; i < 3; ++i) {
-        if (filename[i] == '\0')
-            return -1;
-
-        if (!is_character_valid(filename[sep + 1 + i])) {
-            FAT16DBG("FAT16: Invalid character in filename: %s\n", filename);
-            return -1;
-        }
-
-        fat_filename[8 + i] = toupper(filename[sep + 1 + i]);
-    }
-
-#ifndef NDEBUG
-    for (i = 0; i < 11; ++i)
-        printf("%c", fat_filename[i]);
-    printf("\n");
-#endif
     return 0;
 }
 
@@ -761,7 +683,7 @@ int fat16_open(const char *filename, char mode)
         return -1;
     }
 
-    if (make_fat_filename(fat_filename, filename) < 0)
+    if (fat16_get_short_filename(fat_filename, filename) < 0)
         return -1;
 
     if (mode == 'r')
@@ -925,7 +847,7 @@ int fat16_delete(const char *filename)
         return -1;
     }
 
-    if (make_fat_filename(fat_filename, filename) < 0)
+    if (fat16_get_short_filename(fat_filename, filename) < 0)
         return -1;
 
     if (is_file_opened(fat_filename, READ_MODE)
