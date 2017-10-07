@@ -21,6 +21,7 @@ void Test::init()
 void Test::release()
 {
     release_image();
+    restore_image();
 }
 
 const std::string Test::get_name() const
