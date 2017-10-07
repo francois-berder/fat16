@@ -7,7 +7,7 @@
 
 #ifndef NDEBUG
 #define FAT16DBG(...) do { LOG(__VA_ARGS__); } while (0)
-#elif
+#else
 #define FAT16DBG(...)
 #endif
 
