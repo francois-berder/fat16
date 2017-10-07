@@ -3,65 +3,16 @@
 #include <string.h>
 #include "debug.h"
 #include "fat16.h"
+#include "fat16_priv.h"
 #include "path.h"
 
 
 #define INVALID_HANDLE  (255)
 #define HANDLE_COUNT    (16)        /* Must not be greater than 254 */
-#define READ_MODE       (true)
-#define WRITE_MODE      (false)
 
-#define FIRST_CLUSTER_INDEX_IN_FAT     (3)
-#define MAX_BYTES_PER_CLUSTER           (32768LU)
-#define ROOT_DIR_VFAT_ENTRY             (0x0F)
-#define ROOT_DIR_AVAILABLE_ENTRY        (0xE5)
+static struct fat16_bpb bpb;
 
-/* cluster is a 16bit integer stored 26 bytes after the start of a
- * root directory entry.
- */
-#define CLUSTER_OFFSET_ROOT_DIR_ENTRY   (26)
-
-static struct fat16_bpb {
-    char        oem_name[8];
-    uint16_t    bytes_per_sector;
-    uint8_t     sectors_per_cluster;
-    uint16_t    reversed_sector_count;
-    uint8_t     num_fats;
-    uint16_t    root_entry_count;
-    uint32_t    sector_count;
-    uint16_t    fat_size; /* in sectors */
-    uint32_t    volume_id;
-    char        label[11];
-    char        fs_type[8];
-} bpb;
-
-struct dir_entry {
-    char        filename[11];
-    uint8_t     attribute;
-    uint8_t     reserved[10];
-    uint8_t     time[2];
-    uint8_t     date[2];
-    uint16_t    starting_cluster;
-    uint32_t    size;
-};
-
-enum FILE_ATTRIBUTE {
-    READ_ONLY   = 0x01,
-    HIDDEN      = 0x02,
-    SYSTEM      = 0x04,
-    VOLUME      = 0x08,
-    SUBDIR      = 0x10,
-    ARCHIVE     = 0x20
-};
-
-static struct {
-    char        filename[11];       /* If handle is not used, filename[0] == 0 */
-    bool        read_mode;          /* True if reading from file, false if writing to file */
-    uint16_t    entry_index;        /* Index of the entry in the root directory */
-    uint16_t    cluster;            /* Current cluster reading/writing */
-    uint16_t    offset;             /* Offset in bytes in cluster */
-    uint32_t    remaining_bytes;    /* Remaining bytes to be read in bytes in the file, only used in read mode */
-} handles[HANDLE_COUNT];
+static struct file_handle handles[HANDLE_COUNT];
 
 static uint32_t start_fat_region = 0;               /* offset in bytes of first FAT */
 static uint32_t start_root_directory_region = 0;    /* offset in bytes of root directory */
