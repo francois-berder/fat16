@@ -3,6 +3,7 @@
 #include "Common.hpp"
 #include "ReadLargeFileTest.hpp"
 #include "../driver/fat16.h"
+#include "linux_hal.h"
 
 
 ReadLargeFileTest::ReadLargeFileTest(unsigned int bytes_count):
@@ -20,7 +21,7 @@ void ReadLargeFileTest::init()
 
 bool ReadLargeFileTest::run()
 {
-    if (fat16_init() < 0)
+    if (fat16_init(linux_dev) < 0)
         return false;
 
     int fd = fat16_open("HELLO.TXT", 'r');

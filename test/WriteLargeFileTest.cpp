@@ -3,7 +3,7 @@
 #include "Common.hpp"
 #include "WriteLargeFileTest.hpp"
 #include "../driver/fat16.h"
-
+#include "linux_hal.h"
 
 WriteLargeFileTest::WriteLargeFileTest(unsigned int bytes_count):
 Test(std::string("WriteLargeFileTest (") + std::to_string(bytes_count) + std::string(")")),
@@ -14,7 +14,7 @@ m_bytes_count(bytes_count)
 
 bool WriteLargeFileTest::run()
 {
-    if (fat16_init() < 0)
+    if (fat16_init(linux_dev) < 0)
         return false;
 
     int fd = fat16_open("HELLO.TXT", 'w');

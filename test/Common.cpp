@@ -1,7 +1,7 @@
 #include <cstdlib>
 #include <stdexcept>
 #include "Common.hpp"
-#include "../driver/linux_hal.h"
+#include "linux_hal.h"
 
 
 static std::string image_path = "data/fs.img";

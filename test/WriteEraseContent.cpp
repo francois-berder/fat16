@@ -3,6 +3,7 @@
 #include "Common.hpp"
 #include "WriteEraseContentTest.hpp"
 #include "../driver/fat16.h"
+#include "linux_hal.h"
 
 
 WriteEraseContentTest::WriteEraseContentTest():
@@ -21,7 +22,7 @@ void WriteEraseContentTest::init()
 
 bool WriteEraseContentTest::run()
 {
-    if (fat16_init() < 0)
+    if (fat16_init(linux_dev) < 0)
         return false;
 
     int fd = fat16_open("HELLO.TXT", 'w');

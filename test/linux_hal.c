@@ -29,7 +29,7 @@ int linux_release_image(void)
     return 0;
 }
 
-int hal_read(uint8_t *buffer, uint32_t length)
+int linux_read(uint8_t *buffer, uint32_t length)
 {
     if (buffer == NULL) {
         printf("linux_read: Cannot read with null buffer\n");
@@ -47,7 +47,7 @@ int hal_read(uint8_t *buffer, uint32_t length)
     return 0;
 }
 
-int hal_read_byte(uint8_t *data)
+int linux_read_byte(uint8_t *data)
 {
     if (data == NULL) {
         printf("linux_read: Cannot read with null buffer\n");
@@ -62,12 +62,12 @@ int hal_read_byte(uint8_t *data)
     return 0;
 }
 
-int hal_seek(int offset)
+int linux_seek(int offset)
 {
     return fseek(image, offset, SEEK_SET);
 }
 
-int hal_write(const uint8_t *buffer, uint32_t length)
+int linux_write(const uint8_t *buffer, uint32_t length)
 {
     if (buffer == NULL) {
         printf("linux_write: Cannot write with null buffer\n");
@@ -84,3 +84,10 @@ int hal_write(const uint8_t *buffer, uint32_t length)
 
     return fflush(image);
 }
+
+struct storage_dev_t linux_dev = {
+    linux_read,
+    linux_read_byte,
+    linux_write,
+    linux_seek
+};

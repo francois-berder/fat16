@@ -3,6 +3,7 @@
 #include "Common.hpp"
 #include "LsTest.hpp"
 #include "../driver/fat16.h"
+#include "linux_hal.h"
 
 
 LsTest::LsTest(unsigned int files_count):
@@ -28,7 +29,7 @@ void LsTest::init()
 
 bool LsTest::run()
 {
-    if (fat16_init() < 0)
+    if (fat16_init(linux_dev) < 0)
         return false;
 
     unsigned int files_count = 0;

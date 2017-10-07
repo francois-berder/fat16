@@ -3,7 +3,6 @@
 #include <string.h>
 #include "debug.h"
 #include "fat16.h"
-#include "hal.h"
 #include "path.h"
 
 
@@ -69,6 +68,8 @@ static uint32_t start_root_directory_region = 0;    /* offset in bytes of root d
 static uint32_t start_data_region = 0;              /* offset in bytes of data region */
 static uint32_t data_cluster_count = 0;             /* Number of clusters in data region */
 
+static struct storage_dev_t dev;
+
 static int fat16_read_bpb(void)
 {
     uint8_t data;
@@ -81,22 +82,22 @@ static int fat16_read_bpb(void)
      * Either: 0xEB,0x??, 0x90
      * or: 0xE9,0x??,0x??
      */
-    hal_read_byte(&data);
+    dev.read_byte(&data);
     if (data == 0xEB) {
-        hal_read_byte(&data);
-        hal_read_byte(&data);
+        dev.read_byte(&data);
+        dev.read_byte(&data);
         if (data != 0x90)
             return -INVALID_JUMP_INSTRUCTION;
     } else if (data == 0xE9) {
-        hal_read_byte(&data);
-        hal_read_byte(&data);
+        dev.read_byte(&data);
+        dev.read_byte(&data);
     } else {
         return -INVALID_JUMP_INSTRUCTION;
     }
 
-    hal_read((uint8_t *)&bpb.oem_name, 8);
+    dev.read((uint8_t *)&bpb.oem_name, 8);
     FAT16DBG("FAT16: OEM NAME: %s\n", bpb.oem_name);
-    hal_read((uint8_t *)&bpb.bytes_per_sector, 2);
+    dev.read((uint8_t *)&bpb.bytes_per_sector, 2);
     FAT16DBG("FAT16: bytes per sector: %u\n", bpb.bytes_per_sector);
     if (bpb.bytes_per_sector != 512
         && bpb.bytes_per_sector != 1024
@@ -104,7 +105,7 @@ static int fat16_read_bpb(void)
         && bpb.bytes_per_sector != 4096)
         return -INVALID_BYTES_PER_SECTOR;
 
-    hal_read(&bpb.sectors_per_cluster, 1);
+    dev.read(&bpb.sectors_per_cluster, 1);
     FAT16DBG("FAT16: sectors per cluster: %u\n", bpb.sectors_per_cluster);
     if (bpb.sectors_per_cluster != 1
         && bpb.sectors_per_cluster != 2
@@ -119,44 +120,44 @@ static int fat16_read_bpb(void)
     if (bpb.bytes_per_sector * bpb.sectors_per_cluster > MAX_BYTES_PER_CLUSTER)
         return -INVALID_BYTES_PER_CLUSTER;
 
-    hal_read((uint8_t *)&bpb.reversed_sector_count, 2);
+    dev.read((uint8_t *)&bpb.reversed_sector_count, 2);
     FAT16DBG("FAT16: reserved sector count: %u\n", bpb.reversed_sector_count);
     if (bpb.reversed_sector_count != 1)
         return -INVALID_RESERVED_SECTOR_COUNT;
 
-    hal_read(&bpb.num_fats, 1);
+    dev.read(&bpb.num_fats, 1);
     FAT16DBG("FAT16: num fats: %u\n", bpb.num_fats);
 
-    hal_read((uint8_t *)&bpb.root_entry_count, 2);
+    dev.read((uint8_t *)&bpb.root_entry_count, 2);
     FAT16DBG("FAT16: root entry count: %u\n", bpb.root_entry_count);
     if ((((32 * bpb.root_entry_count) / bpb.bytes_per_sector) & 0x1) != 0)
         return -INVALID_ROOT_ENTRY_COUNT;
 
-    hal_read((uint8_t *)&bpb.sector_count, 2);
+    dev.read((uint8_t *)&bpb.sector_count, 2);
 
 
     /* Skip media */
-    hal_read_byte(&data);
+    dev.read_byte(&data);
 
-    hal_read((uint8_t *)&bpb.fat_size, 2);
+    dev.read((uint8_t *)&bpb.fat_size, 2);
     FAT16DBG("FAT16: fat size: %u\n", bpb.fat_size);
 
     /* Skip sector per track for int 0x13 */
-    hal_read_byte(&data);
-    hal_read_byte(&data);
+    dev.read_byte(&data);
+    dev.read_byte(&data);
 
     /* Skip number of heads for int 0x13 */
-    hal_read_byte(&data);
-    hal_read_byte(&data);
+    dev.read_byte(&data);
+    dev.read_byte(&data);
 
     /* Skip hidden sectors */
-    hal_read_byte(&data);
-    hal_read_byte(&data);
-    hal_read_byte(&data);
-    hal_read_byte(&data);
+    dev.read_byte(&data);
+    dev.read_byte(&data);
+    dev.read_byte(&data);
+    dev.read_byte(&data);
 
     uint32_t sector_count_32b;
-    hal_read((uint8_t *)&sector_count_32b, 4);
+    dev.read((uint8_t *)&sector_count_32b, 4);
     if ((bpb.sector_count != 0 && sector_count_32b != 0)
         || (bpb.sector_count == 0 && sector_count_32b == 0))
         return -INVALID_SECTOR_COUNT;
@@ -166,20 +167,20 @@ static int fat16_read_bpb(void)
     FAT16DBG("FAT16: sector count: %u\n", bpb.sector_count);
 
     /* Skip drive number */
-    hal_read_byte(&data);
+    dev.read_byte(&data);
 
     /* Skip reserved byte */
-    hal_read_byte(&data);
+    dev.read_byte(&data);
 
-    hal_read_byte(&data);
+    dev.read_byte(&data);
     if (data == 0x29) {
-        hal_read((uint8_t *)&bpb.volume_id, 4);
+        dev.read((uint8_t *)&bpb.volume_id, 4);
         FAT16DBG("FAT16: volume ID: %u\n", bpb.volume_id);
 
-        hal_read((uint8_t *)&bpb.label, 11);
+        dev.read((uint8_t *)&bpb.label, 11);
         FAT16DBG("FAT16: label: %s\n", bpb.label);
 
-        hal_read((uint8_t *)bpb.fs_type, 8);
+        dev.read((uint8_t *)bpb.fs_type, 8);
         FAT16DBG("FAT16: fs type: %s\n", bpb.fs_type);
     }
 
@@ -252,7 +253,7 @@ static void move_to_data_region(uint16_t cluster, uint16_t offset)
     pos += tmp;
     pos += offset;
     FAT16DBG("FAT16: Moving to %08X\n", pos);
-    hal_seek(pos);
+    dev.seek(pos);
 }
 
 /**
@@ -266,7 +267,7 @@ static void move_to_root_directory_region(uint16_t entry_index)
 
     pos += entry_index * 32;
     FAT16DBG("FAT16: Moving to %08X\n", pos);
-    hal_seek(pos);
+    dev.seek(pos);
 }
 
 /**
@@ -280,7 +281,7 @@ static void move_to_fat_region(uint16_t cluster)
 
     pos += cluster * 2;
     FAT16DBG("FAT16: Moving to %08X\n", pos);
-    hal_seek(pos);
+    dev.seek(pos);
 }
 
 /**
@@ -297,7 +298,7 @@ static int find_root_directory_entry(uint16_t *entry_index, char *filename)
     move_to_root_directory_region(0);
     for (i = 0; i < bpb.root_entry_count; ++i) {
         struct dir_entry e;
-        hal_read((uint8_t *)&e, sizeof(struct dir_entry));
+        dev.read((uint8_t *)&e, sizeof(struct dir_entry));
 #ifndef NDEBUG
         dump_root_entry(e);
 #endif
@@ -347,7 +348,7 @@ static int fat16_open_read(uint8_t handle, char *filename)
         return -1;
 
     move_to_root_directory_region(entry_index);
-    hal_read((uint8_t *)&entry, sizeof(struct dir_entry));
+    dev.read((uint8_t *)&entry, sizeof(struct dir_entry));
 
     /* Create handle */
     memcpy(handles[handle].filename, filename, sizeof(handles[handle].filename));
@@ -374,7 +375,7 @@ static int find_available_entry_in_root_directory(uint16_t *entry_index)
     do {
         uint8_t tmp;
         move_to_root_directory_region(i);
-        hal_read(&tmp, sizeof(tmp));
+        dev.read(&tmp, sizeof(tmp));
 
         if (tmp == 0 || tmp == ROOT_DIR_AVAILABLE_ENTRY) {
             *entry_index = i;
@@ -404,7 +405,7 @@ static bool last_entry_in_root_directory(uint16_t entry_index)
      * root directory list.
      */
     move_to_root_directory_region(entry_index + 1);
-    hal_read((uint8_t *)&tmp, sizeof(tmp));
+    dev.read((uint8_t *)&tmp, sizeof(tmp));
     return tmp == 0;
 }
 
@@ -423,7 +424,7 @@ static void mark_root_entry_as_available(uint16_t entry_index)
     if (!last_entry_in_root_directory(entry_index))
         entry_marker = ROOT_DIR_AVAILABLE_ENTRY;
     move_to_root_directory_region(entry_index);
-    hal_write(&entry_marker, sizeof(entry_marker));
+    dev.write(&entry_marker, sizeof(entry_marker));
 }
 
 static void free_cluster_chain(uint16_t cluster)
@@ -438,11 +439,11 @@ static void free_cluster_chain(uint16_t cluster)
         uint16_t free_cluster = 0;
         uint16_t next_cluster;
         move_to_fat_region(cluster);
-        hal_read((uint8_t *)&next_cluster, sizeof(next_cluster));
+        dev.read((uint8_t *)&next_cluster, sizeof(next_cluster));
 
         move_to_fat_region(cluster);
 
-        hal_write((uint8_t *)&free_cluster, sizeof(free_cluster));
+        dev.write((uint8_t *)&free_cluster, sizeof(free_cluster));
 
         if (next_cluster >= 0xFFF8)
             break;
@@ -477,8 +478,8 @@ static int delete_file(char *fat_filename)
     pos += entry_index * 32;
     pos += CLUSTER_OFFSET_ROOT_DIR_ENTRY;
     FAT16DBG("FAT16: Moving to %08X\n", pos);
-    hal_seek(pos);
-    hal_read((uint8_t *)&starting_cluster, sizeof(starting_cluster));
+    dev.seek(pos);
+    dev.read((uint8_t *)&starting_cluster, sizeof(starting_cluster));
     free_cluster_chain(starting_cluster);
 
     return 0;
@@ -530,7 +531,7 @@ static int fat16_open_write(uint8_t handle, char *filename)
     entry.size = 0;
 
     move_to_root_directory_region(entry_index);
-    hal_write((uint8_t *)&entry, sizeof(struct dir_entry));
+    dev.write((uint8_t *)&entry, sizeof(struct dir_entry));
 
     /* Create a handle */
     memcpy(handles[handle].filename, filename, sizeof(handles[handle].filename));
@@ -563,7 +564,7 @@ static uint16_t read_fat_entry(uint16_t cluster)
     uint16_t fat_entry = 0;
 
     move_to_fat_region(cluster);
-    hal_read((uint8_t *)&fat_entry, sizeof(fat_entry));
+    dev.read((uint8_t *)&fat_entry, sizeof(fat_entry));
 
     return fat_entry;
 }
@@ -578,13 +579,13 @@ static int allocate_cluster(uint16_t *new_cluster, uint16_t cluster)
     move_to_fat_region(next_cluster);
     for (; next_cluster < data_cluster_count - FIRST_CLUSTER_INDEX_IN_FAT; ++next_cluster) {
         uint16_t fat_entry;
-        hal_read((uint8_t *)&fat_entry, sizeof(fat_entry));
+        dev.read((uint8_t *)&fat_entry, sizeof(fat_entry));
 
         /* Mark it as end of file */
         if (fat_entry == 0) {
             fat_entry = 0xFFFF;
             move_to_fat_region(next_cluster);
-            hal_write((uint8_t *)&fat_entry, sizeof(fat_entry));
+            dev.write((uint8_t *)&fat_entry, sizeof(fat_entry));
             break;
         }
     }
@@ -597,7 +598,7 @@ static int allocate_cluster(uint16_t *new_cluster, uint16_t cluster)
     /* Update current cluster to point to next one */
     if (cluster != 0) {
         move_to_fat_region(cluster);
-        hal_write((uint8_t *)&next_cluster, sizeof(next_cluster));
+        dev.write((uint8_t *)&next_cluster, sizeof(next_cluster));
     }
 
     *new_cluster = next_cluster;
@@ -619,18 +620,20 @@ static void update_size_file(uint16_t entry_index, uint32_t bytes_written_count)
     pos += entry_index * 32;
     pos += 28; /* Offset in bytes of the file size in the entry */
 
-    hal_seek(pos);
-    hal_read((uint8_t *)&file_size, sizeof(file_size));
+    dev.seek(pos);
+    dev.read((uint8_t *)&file_size, sizeof(file_size));
 
     file_size += bytes_written_count;
 
-    hal_seek(pos);
-    hal_write((uint8_t *)&file_size, sizeof(file_size));
+    dev.seek(pos);
+    dev.write((uint8_t *)&file_size, sizeof(file_size));
 }
 
-int fat16_init(void)
+int fat16_init(struct storage_dev_t _dev)
 {
     uint32_t data_sector_count, root_directory_sector_count;
+
+    dev = _dev;
     int ret = fat16_read_bpb();
 
     if (ret < 0)
@@ -731,7 +734,7 @@ int fat16_read(uint8_t handle, void *buffer, uint32_t count)
         if (chunk_length > handles[handle].remaining_bytes)
             chunk_length = handles[handle].remaining_bytes;
 
-        hal_read(&bytes[bytes_read_count], chunk_length);
+        dev.read(&bytes[bytes_read_count], chunk_length);
 
         handles[handle].remaining_bytes -= chunk_length;
         handles[handle].offset += chunk_length;
@@ -799,8 +802,8 @@ int fat16_write(uint8_t handle, const void *buffer, uint32_t count)
                 uint32_t pos = start_root_directory_region;
                 pos += handles[handle].entry_index * 32;
                 pos += CLUSTER_OFFSET_ROOT_DIR_ENTRY;
-                hal_seek(pos);
-                hal_write((uint8_t *)&new_cluster, sizeof(new_cluster));
+                dev.seek(pos);
+                dev.write((uint8_t *)&new_cluster, sizeof(new_cluster));
             }
 
             handles[handle].cluster = new_cluster;
@@ -814,7 +817,7 @@ int fat16_write(uint8_t handle, const void *buffer, uint32_t count)
         if (chunk_length > bytes_remaining_in_cluster)
             chunk_length = bytes_remaining_in_cluster;
 
-        hal_write(&bytes[bytes_written_count], chunk_length);
+        dev.write(&bytes[bytes_written_count], chunk_length);
 
         count -= chunk_length;
         bytes_written_count += chunk_length;
@@ -876,7 +879,7 @@ int fat16_ls(uint16_t *index, char *filename)
         uint8_t attribute = 0;
 
         move_to_root_directory_region(*index);
-        hal_read((uint8_t *)fat_filename, 11);
+        dev.read((uint8_t *)fat_filename, 11);
         ++(*index);
 
         /* If this condition is true, the end of the root directory is reached.
@@ -886,7 +889,7 @@ int fat16_ls(uint16_t *index, char *filename)
             return -2;
 
         /* Also reading attribute to skip any vfat entry. */
-        hal_read(&attribute, 1);
+        dev.read(&attribute, 1);
         if ((attribute & ROOT_DIR_VFAT_ENTRY) == ROOT_DIR_VFAT_ENTRY) {
             fat_filename[0] = 0;    /* Make sure that the condition of the loop
                                      * remains true.

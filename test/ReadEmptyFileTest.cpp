@@ -2,6 +2,7 @@
 #include "Common.hpp"
 #include "ReadEmptyFileTest.hpp"
 #include "../driver/fat16.h"
+#include "linux_hal.h"
 
 
 ReadEmptyFileTest::ReadEmptyFileTest():
@@ -19,7 +20,7 @@ void ReadEmptyFileTest::init()
 
 bool ReadEmptyFileTest::run()
 {
-    if (fat16_init() < 0)
+    if (fat16_init(linux_dev) < 0)
         return false;
 
     int fd = fat16_open("HELLO.TXT", 'r');

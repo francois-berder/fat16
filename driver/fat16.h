@@ -18,15 +18,23 @@ enum FAT_ERROR {
     INVALID_FAT_TYPE
 };
 
+struct storage_dev_t {
+    int (*read)(uint8_t *buffer, uint32_t length);
+    int (*read_byte)(uint8_t *data);
+    int (*write)(const uint8_t *buffer, uint32_t length);
+    int (*seek)(int offset);
+};
+
 /**
  * @brief Initialise the FAT16 driver.
  *
  * It reads the BPB, initialise internal variables.
  * It must be called before doing any other operations.
  *
+ * @param dev
  * @return 0 if successful, -1 otherwise
  */
-int fat16_init(void);
+int fat16_init(struct storage_dev_t dev);
 
 /**
  * @brief Open a file.

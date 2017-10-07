@@ -2,7 +2,7 @@
 #include "Common.hpp"
 #include "ReadSmallFileTest.hpp"
 #include "../driver/fat16.h"
-
+#include "linux_hal.h"
 
 ReadSmallFileTest::ReadSmallFileTest():
 Test("ReadSmallFileTest"),
@@ -19,7 +19,7 @@ void ReadSmallFileTest::init()
 
 bool ReadSmallFileTest::run()
 {
-    if (fat16_init() < 0)
+    if (fat16_init(linux_dev) < 0)
         return false;
 
     int fd = fat16_open("HELLO.TXT", 'r');
