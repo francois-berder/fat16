@@ -1,4 +1,6 @@
+#include <cstdio>
 #include <cstdlib>
+#include <string>
 #include <sstream>
 #include "Common.hpp"
 #include "LsTest.hpp"
