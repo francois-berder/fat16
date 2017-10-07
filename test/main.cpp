@@ -47,10 +47,14 @@ int main()
     tests.push_back(new LsTest(256));
     tests.push_back(new LsTest(511));
 
+    unsigned int failing_test_count = 0;
     for (Test *test : tests) {
         std::cout << "===== " << test->get_name() << " =====" << std::endl;
         test->init();
         bool result = test->run();
+        if (!result)
+            ++failing_test_count;
+
         test_results.push_back(result);
         print_pass_fail(result);
         test->release();
@@ -67,5 +71,5 @@ int main()
     for (Test *test : tests)
         delete test;
 
-    return 0;
+    return failing_test_count;
 }
