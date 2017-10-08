@@ -33,7 +33,7 @@ void dump_root_entry(struct dir_entry e)
 
 }
 
-void move_to_data_region(uint16_t cluster, uint16_t offset)
+uint32_t move_to_data_region(uint16_t cluster, uint16_t offset)
 {
     uint32_t tmp = cluster - 2;
 
@@ -44,24 +44,27 @@ void move_to_data_region(uint16_t cluster, uint16_t offset)
     pos += offset;
     FAT16DBG("FAT16: Moving to %08X\n", pos);
     dev.seek(pos);
+    return pos;
 }
 
-void move_to_root_directory_region(uint16_t entry_index)
+uint32_t move_to_root_directory_region(uint16_t entry_index)
 {
     uint32_t pos = layout.start_root_directory_region;
 
     pos += entry_index * 32;
     FAT16DBG("FAT16: Moving to %08X\n", pos);
     dev.seek(pos);
+    return pos;
 }
 
-void move_to_fat_region(uint16_t cluster)
+uint32_t move_to_fat_region(uint16_t cluster)
 {
     uint32_t pos = layout.start_fat_region;
 
     pos += cluster * 2;
     FAT16DBG("FAT16: Moving to %08X\n", pos);
     dev.seek(pos);
+    return pos;
 }
 
 int allocate_cluster(uint16_t *new_cluster, uint16_t cluster)

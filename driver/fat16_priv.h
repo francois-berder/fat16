@@ -74,22 +74,25 @@ void dump_root_entry(struct dir_entry e);
  *
  * @param[in] cluster Index of the cluster
  * @param[in] offset Offset in bytes from the start of the cluster.
+ * @return Position in the fat partition
  */
-void move_to_data_region(uint16_t cluster, uint16_t offset);
+uint32_t move_to_data_region(uint16_t cluster, uint16_t offset);
 
 /**
  * @brief Move cursor to an entry in the root directory.
  *
  * @param[in] entry_index Index of the entry, must not be greater than bpb.root_entry_count
+ * @return Position in the fat partition
  */
-void move_to_root_directory_region(uint16_t entry_index);
+uint32_t move_to_root_directory_region(uint16_t entry_index);
 
 /**
  * @brief Move cursor to a location in the first FAT.
  *
  * @param[in] cluster Index of the cluster.
+ * @return Position in the fat partition
  */
-void move_to_fat_region(uint16_t cluster);
+uint32_t move_to_fat_region(uint16_t cluster);
 
 /**
  * @brief Mark a cluster in the FAT as used
