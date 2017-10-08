@@ -465,7 +465,6 @@ int fat16_init(struct storage_dev_t _dev)
     /* Find number of sectors in data region */
     data_sector_count = bpb.sector_count - (bpb.reversed_sector_count + (bpb.num_fats * bpb.fat_size) + root_directory_sector_count);
     layout.data_cluster_count = data_sector_count / bpb.sectors_per_cluster;
-    FAT16DBG("FAT16: data cluster count: %u\n", layout.data_cluster_count);
 
     if (layout.data_cluster_count < 4085
         || layout.data_cluster_count >= 65525)
@@ -475,9 +474,11 @@ int fat16_init(struct storage_dev_t _dev)
     layout.start_root_directory_region = layout.start_fat_region + (bpb.num_fats * bpb.fat_size) * bpb.bytes_per_sector;
     layout.start_data_region = layout.start_root_directory_region + (root_directory_sector_count * bpb.bytes_per_sector);
 
-    FAT16DBG("FAT16: layout.start_fat_region=%08X\n", layout.start_fat_region);
-    FAT16DBG("FAT16: layout.start_root_directory_region=%08X\n", layout.start_root_directory_region);
-    FAT16DBG("FAT16: layout.start_data_region=%08X\n", layout.start_data_region);
+    FAT16DBG("FAT16: file system layout:\n")
+    FAT16DBG("\tstart_fat_region=%08X\n", layout.start_fat_region);
+    FAT16DBG("\tstart_root_directory_region=%08X\n", layout.start_root_directory_region);
+    FAT16DBG("\tstart_data_region=%08X\n", layout.start_data_region);
+    FAT16DBG("\tdata cluster count: %u\n", layout.data_cluster_count);
 
     /* Make sure that all handles are available */
     memset(handles, 0, sizeof(handles));
