@@ -247,10 +247,10 @@ static int fat16_open_read(uint8_t handle, char *filename)
 static int find_available_entry_in_root_directory(uint16_t *entry_index)
 {
     uint16_t i = 0;
+    uint32_t pos = layout.start_root_directory_region;
 
     do {
         uint8_t tmp;
-        move_to_root_directory_region(i);
         dev.read(&tmp, sizeof(tmp));
 
         if (tmp == 0 || tmp == ROOT_DIR_AVAILABLE_ENTRY) {
@@ -258,6 +258,8 @@ static int find_available_entry_in_root_directory(uint16_t *entry_index)
             return 0;
         }
         ++i;
+        pos += 32;
+        dev.seek(pos);
     } while (i < bpb.root_entry_count);
 
     return -1;
