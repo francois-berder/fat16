@@ -9,7 +9,7 @@ The driver can:
    - create/delete file located in the root directory
    - list files in the root directory
    - read to a file (file can be opened several times in reading mode)
-   - write to a file, its contents are erased. A file can be opened
+   - write to a file, its previous contents are erased. A file cannot be read while it is opened in write mode.
 
 This driver cannot:
    - create/delete directories
@@ -35,7 +35,7 @@ $ sudo ./run_test
 
 ## Examples
 
-Reading a file:
+Printing content of a file:
 ```c
 void print_file_content(void)
 {
