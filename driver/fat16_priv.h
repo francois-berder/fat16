@@ -18,6 +18,13 @@
  */
 #define CLUSTER_OFFSET_ROOT_DIR_ENTRY   (26)
 
+struct fat16_layout {
+    uint32_t start_fat_region;              /**< offset in bytes of first FAT */
+    uint32_t start_root_directory_region;   /**< offset in bytes of root directory */
+    uint32_t start_data_region;             /**< offset in bytes of data region */
+    uint32_t data_cluster_count;            /**< Number of clusters in data region */
+};
+
 struct fat16_bpb {
     char        oem_name[8];
     uint16_t    bytes_per_sector;
@@ -59,5 +66,27 @@ enum FILE_ATTRIBUTE {
     SUBDIR      = 0x10,
     ARCHIVE     = 0x20
 };
+
+/**
+ * @brief Move cursor to a specific byte in data region.
+ *
+ * @param[in] cluster Index of the cluster
+ * @param[in] offset Offset in bytes from the start of the cluster.
+ */
+void move_to_data_region(uint16_t cluster, uint16_t offset);
+
+/**
+ * @brief Move cursor to an entry in the root directory.
+ *
+ * @param[in] entry_index Index of the entry, must not be greater than bpb.root_entry_count
+ */
+void move_to_root_directory_region(uint16_t entry_index);
+
+/**
+ * @brief Move cursor to a location in the first FAT.
+ *
+ * @param[in] cluster Index of the cluster.
+ */
+void move_to_fat_region(uint16_t cluster);
 
 #endif

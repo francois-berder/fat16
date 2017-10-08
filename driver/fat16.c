@@ -10,16 +10,13 @@
 #define INVALID_HANDLE  (255)
 #define HANDLE_COUNT    (16)        /* Must not be greater than 254 */
 
-static struct fat16_bpb bpb;
+struct fat16_bpb bpb;
 
 static struct file_handle handles[HANDLE_COUNT];
 
-static uint32_t start_fat_region = 0;               /* offset in bytes of first FAT */
-static uint32_t start_root_directory_region = 0;    /* offset in bytes of root directory */
-static uint32_t start_data_region = 0;              /* offset in bytes of data region */
-static uint32_t data_cluster_count = 0;             /* Number of clusters in data region */
+struct fat16_layout layout;
 
-static struct storage_dev_t dev;
+struct storage_dev_t dev;
 
 static int fat16_read_bpb(void)
 {
@@ -186,53 +183,6 @@ static uint8_t find_available_handle(void)
             return i;
 
     return INVALID_HANDLE;
-}
-
-/**
- * @brief Move cursor to a specific byte in data region.
- *
- * @param[in] cluster Index of the cluster
- * @param[in] offset Offset in bytes from the start of the cluster.
- */
-static void move_to_data_region(uint16_t cluster, uint16_t offset)
-{
-    uint32_t tmp = cluster - 2;
-
-    tmp *= bpb.sectors_per_cluster;
-    tmp *= bpb.bytes_per_sector;
-    uint32_t pos = start_data_region;
-    pos += tmp;
-    pos += offset;
-    FAT16DBG("FAT16: Moving to %08X\n", pos);
-    dev.seek(pos);
-}
-
-/**
- * @brief Move cursor to an entry in the root directory.
- *
- * @param[in] entry_index Index of the entry, must not be greater than bpb.root_entry_count
- */
-static void move_to_root_directory_region(uint16_t entry_index)
-{
-    uint32_t pos = start_root_directory_region;
-
-    pos += entry_index * 32;
-    FAT16DBG("FAT16: Moving to %08X\n", pos);
-    dev.seek(pos);
-}
-
-/**
- * @brief Move cursor to a location in the first FAT.
- *
- * @param[in] cluster Index of the cluster.
- */
-static void move_to_fat_region(uint16_t cluster)
-{
-    uint32_t pos = start_fat_region;
-
-    pos += cluster * 2;
-    FAT16DBG("FAT16: Moving to %08X\n", pos);
-    dev.seek(pos);
 }
 
 /**
@@ -425,7 +375,7 @@ static int delete_file(char *fat_filename)
     mark_root_entry_as_available(entry_index);
 
     /* Find the first cluster used by the file */
-    pos = start_root_directory_region;
+    pos = layout.start_root_directory_region;
     pos += entry_index * 32;
     pos += CLUSTER_OFFSET_ROOT_DIR_ENTRY;
     FAT16DBG("FAT16: Moving to %08X\n", pos);
@@ -528,7 +478,7 @@ static int allocate_cluster(uint16_t *new_cluster, uint16_t cluster)
      * because they are reserved.
      */
     move_to_fat_region(next_cluster);
-    for (; next_cluster < data_cluster_count - FIRST_CLUSTER_INDEX_IN_FAT; ++next_cluster) {
+    for (; next_cluster < layout.data_cluster_count - FIRST_CLUSTER_INDEX_IN_FAT; ++next_cluster) {
         uint16_t fat_entry;
         dev.read((uint8_t *)&fat_entry, sizeof(fat_entry));
 
@@ -541,7 +491,7 @@ static int allocate_cluster(uint16_t *new_cluster, uint16_t cluster)
         }
     }
 
-    if (next_cluster == data_cluster_count) {
+    if (next_cluster == layout.data_cluster_count) {
         FAT16DBG("FAT16: Could not find an available cluster.\n");
         return -1;
     }
@@ -566,7 +516,7 @@ static int allocate_cluster(uint16_t *new_cluster, uint16_t cluster)
 static void update_size_file(uint16_t entry_index, uint32_t bytes_written_count)
 {
     uint32_t file_size = 0;
-    uint32_t pos = start_root_directory_region;
+    uint32_t pos = layout.start_root_directory_region;
 
     pos += entry_index * 32;
     pos += 28; /* Offset in bytes of the file size in the entry */
@@ -595,20 +545,20 @@ int fat16_init(struct storage_dev_t _dev)
 
     /* Find number of sectors in data region */
     data_sector_count = bpb.sector_count - (bpb.reversed_sector_count + (bpb.num_fats * bpb.fat_size) + root_directory_sector_count);
-    data_cluster_count = data_sector_count / bpb.sectors_per_cluster;
-    FAT16DBG("FAT16: data cluster count: %u\n", data_cluster_count);
+    layout.data_cluster_count = data_sector_count / bpb.sectors_per_cluster;
+    FAT16DBG("FAT16: data cluster count: %u\n", layout.data_cluster_count);
 
-    if (data_cluster_count < 4085
-        || data_cluster_count >= 65525)
+    if (layout.data_cluster_count < 4085
+        || layout.data_cluster_count >= 65525)
         return -INVALID_FAT_TYPE;
 
-    start_fat_region = bpb.reversed_sector_count * bpb.bytes_per_sector;
-    start_root_directory_region = start_fat_region + (bpb.num_fats * bpb.fat_size) * bpb.bytes_per_sector;
-    start_data_region = start_root_directory_region + (root_directory_sector_count * bpb.bytes_per_sector);
+    layout.start_fat_region = bpb.reversed_sector_count * bpb.bytes_per_sector;
+    layout.start_root_directory_region = layout.start_fat_region + (bpb.num_fats * bpb.fat_size) * bpb.bytes_per_sector;
+    layout.start_data_region = layout.start_root_directory_region + (root_directory_sector_count * bpb.bytes_per_sector);
 
-    FAT16DBG("FAT16: start_fat_region=%08X\n", start_fat_region);
-    FAT16DBG("FAT16: start_root_directory_region=%08X\n", start_root_directory_region);
-    FAT16DBG("FAT16: start_data_region=%08X\n", start_data_region);
+    FAT16DBG("FAT16: layout.start_fat_region=%08X\n", layout.start_fat_region);
+    FAT16DBG("FAT16: layout.start_root_directory_region=%08X\n", layout.start_root_directory_region);
+    FAT16DBG("FAT16: layout.start_data_region=%08X\n", layout.start_data_region);
 
     /* Make sure that all handles are available */
     memset(handles, 0, sizeof(handles));
@@ -750,7 +700,7 @@ int fat16_write(uint8_t handle, const void *buffer, uint32_t count)
 
             /* If the file was empty, update cluster in root directory entry */
             if (handles[handle].cluster == 0) {
-                uint32_t pos = start_root_directory_region;
+                uint32_t pos = layout.start_root_directory_region;
                 pos += handles[handle].entry_index * 32;
                 pos += CLUSTER_OFFSET_ROOT_DIR_ENTRY;
                 dev.seek(pos);
