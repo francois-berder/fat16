@@ -89,4 +89,20 @@ void move_to_root_directory_region(uint16_t entry_index);
  */
 void move_to_fat_region(uint16_t cluster);
 
+/**
+ * @brief Mark a cluster in the FAT as used
+ *
+ * @param[out] new_cluster
+ * @param[in] cluster
+ * @return 0 if successful, -1 otherwise
+ */
+int allocate_cluster(uint16_t *new_cluster, uint16_t cluster);
+
+/**
+ * @brief Mark a cluster chain as free in the FAT
+ *
+ * @param[in] cluster First cluster in the chain
+ */
+void free_cluster_chain(uint16_t cluster);
+
 #endif
