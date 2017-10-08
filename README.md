@@ -56,10 +56,11 @@ void print_file_content(void)
             break;
         } else if (n < 0) {
             fprintf(stderr, "Error %d while reading\n", -n);
+            break;
+        } else {
+            for (i = 0; i < n; ++i)
+                printf("%c", buffer[i]);
         }
-
-        for (i = 0; i < n; ++i)
-            printf("%c", buffer[i]);
     }
 
     fat16_close(fd);
@@ -71,7 +72,7 @@ Listing files in root directory:
 void list_files(void)
 {
     char filename[13];
-    int i = 0;
+    uint16_t i = 0;
     while(i >= 0) {
         i = fat16_ls(i, filename);
         if (i >= 0)
