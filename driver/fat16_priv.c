@@ -71,7 +71,8 @@ int allocate_cluster(uint16_t *new_cluster, uint16_t cluster)
 {
     uint16_t next_cluster = FIRST_CLUSTER_INDEX_IN_FAT;
 
-    /* Find an empty location in the FAT, skip first 3 entries in the FAT,
+    /*
+     * Find an empty location in the FAT, skip first 3 entries in the FAT,
      * because they are reserved.
      */
     move_to_fat_region(next_cluster);
@@ -105,8 +106,10 @@ int allocate_cluster(uint16_t *new_cluster, uint16_t cluster)
 
 void free_cluster_chain(uint16_t cluster)
 {
-    /* If the file is empty, the starting cluster variable is equal to 0.
-     * No need to iterate through the FAT. */
+    /*
+     * If the file is empty, the starting cluster variable is equal to 0.
+     * No need to iterate through the FAT.
+     */
     if (cluster == 0)
         return;
 

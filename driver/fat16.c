@@ -26,7 +26,8 @@ static int fat16_read_bpb(void)
 
     /* Parse boot sector */
     FAT16DBG("FAT16: #######   BPB   #######\n");
-    /* jump instruction on 3 bytes.
+    /*
+     * jump instruction on 3 bytes.
      * Either: 0xEB,0x??, 0x90
      * or: 0xE9,0x??,0x??
      */
@@ -356,7 +357,8 @@ static int fat16_open_write(uint8_t handle, char *filename)
         return -1;
     }
 
-    /* Check that it is not opened for writing operations.
+    /*
+     * Check that it is not opened for writing operations.
      * For simplicity, a file can be written by only one
      * handle.
      */
@@ -365,7 +367,8 @@ static int fat16_open_write(uint8_t handle, char *filename)
         return -1;
     }
 
-    /* Discard any previous content.
+    /*
+     * Discard any previous content.
      * Do not check return value because the file may not exist.
      */
     delete_file(filename);
@@ -397,7 +400,7 @@ static int fat16_open_write(uint8_t handle, char *filename)
     return handle;
 }
 
-/* Return true if handle is valid, false otherwise */
+/** @return True if handle is valid, false otherwise */
 static bool check_handle(uint8_t handle)
 {
     if (handle >= HANDLE_COUNT)
@@ -561,7 +564,7 @@ int fat16_read(uint8_t handle, void *buffer, uint32_t count)
             /* Look for the next cluster in the FAT, unless we are already reading the last one */
             if (handles[handle].remaining_bytes != 0) {
                 uint16_t fat_entry = read_fat_entry(handles[handle].cluster);
-                /* TODO: check fat entry */
+                /* @todo check fat entry */
 
                 handles[handle].cluster = fat_entry;
 
@@ -699,7 +702,8 @@ int fat16_ls(uint16_t *index, char *filename)
         dev.read(fat_filename, 11);
         ++(*index);
 
-        /* If this condition is true, the end of the root directory is reached.
+        /*
+         * If this condition is true, the end of the root directory is reached.
          * and there are no more files to be found.
          */
         if (*index == bpb.root_entry_count)
@@ -715,7 +719,8 @@ int fat16_ls(uint16_t *index, char *filename)
         }
     }
 
-    /* Reformat filename:
+    /*
+     * Reformat filename:
      *   - Trim name
      *   - Add '.' to separate name and extension
      *   - Trim extension
