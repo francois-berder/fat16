@@ -3,7 +3,7 @@
 This aim of this project is to create a small program able to read FAT16 image on Linux. This project has also been ported to a PIC24, see [BoatController](https://github.com/francois-berder/BoatController).
 The data folder contains images used to test the program.
 
-#### Features
+## Features
 
 The driver can:
    - create/delete file located in the root directory
@@ -24,7 +24,7 @@ Example: DATA.TXT
 
 File names are not case sensitive.
 
-#### Build instructions
+## Build instructions
 
 ```sh
 $ cmake .
@@ -36,7 +36,7 @@ This creates a shared library libfat16_driver.so, then the test suite must be ru
 $ sudo ./run_test
 ```
 
-#### Examples
+## Examples
 
 Reading a file:
 ```c
