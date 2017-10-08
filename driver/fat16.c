@@ -135,29 +135,6 @@ static int fat16_read_bpb(void)
     return 0;
 }
 
-#ifndef NDEBUG
-static void dump_root_entry(struct dir_entry e)
-{
-    FAT16DBG("FAT16: filename: %s\n", e.filename);
-    FAT16DBG("FAT16: attribute: ");
-    if (e.attribute & READ_ONLY)
-        FAT16DBG("FAT16: read-only ");
-    if (e.attribute & HIDDEN)
-        FAT16DBG("FAT16: hidden ");
-    if (e.attribute & SYSTEM)
-        FAT16DBG("FAT16: system ");
-    if (e.attribute & VOLUME)
-        FAT16DBG("FAT16: volume ");
-    if (e.attribute & SUBDIR)
-        FAT16DBG("FAT16: subdir ");
-    if (e.attribute & ARCHIVE)
-        FAT16DBG("FAT16: archive ");
-    FAT16DBG("FAT16: \n");
-    FAT16DBG("FAT16: starting cluster: %u\n", e.starting_cluster);
-    FAT16DBG("FAT16: size: %u\n", e.size);
-}
-#endif
-
 static bool is_file_opened(char *filename, bool mode)
 {
     uint8_t i = 0;
@@ -200,9 +177,7 @@ static int find_root_directory_entry(uint16_t *entry_index, char *filename)
     for (i = 0; i < bpb.root_entry_count; ++i) {
         struct dir_entry e;
         dev.read(&e, sizeof(struct dir_entry));
-#ifndef NDEBUG
         dump_root_entry(e);
-#endif
 
         /* Skip available entry */
         if ((uint8_t)(e.filename[0]) == ROOT_DIR_AVAILABLE_ENTRY)

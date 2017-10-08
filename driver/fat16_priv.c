@@ -7,6 +7,32 @@ extern struct storage_dev_t dev;
 extern struct fat16_layout layout;
 extern struct fat16_bpb bpb;
 
+void dump_root_entry(struct dir_entry e)
+{
+#ifndef NDEBUG
+    FAT16DBG("FAT16: filename: %s\n", e.filename);
+    FAT16DBG("FAT16: attribute: ");
+    if (e.attribute & READ_ONLY)
+        FAT16DBG("FAT16: read-only ");
+    if (e.attribute & HIDDEN)
+        FAT16DBG("FAT16: hidden ");
+    if (e.attribute & SYSTEM)
+        FAT16DBG("FAT16: system ");
+    if (e.attribute & VOLUME)
+        FAT16DBG("FAT16: volume ");
+    if (e.attribute & SUBDIR)
+        FAT16DBG("FAT16: subdir ");
+    if (e.attribute & ARCHIVE)
+        FAT16DBG("FAT16: archive ");
+    FAT16DBG("FAT16: \n");
+    FAT16DBG("FAT16: starting cluster: %u\n", e.starting_cluster);
+    FAT16DBG("FAT16: size: %u\n", e.size);
+#else
+    (void)e;
+#endif
+
+}
+
 void move_to_data_region(uint16_t cluster, uint16_t offset)
 {
     uint32_t tmp = cluster - 2;

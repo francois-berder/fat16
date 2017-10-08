@@ -67,6 +67,8 @@ enum FILE_ATTRIBUTE {
     ARCHIVE     = 0x20
 };
 
+void dump_root_entry(struct dir_entry e);
+
 /**
  * @brief Move cursor to a specific byte in data region.
  *
