@@ -19,9 +19,9 @@ enum FAT_ERROR {
 };
 
 struct storage_dev_t {
-    int (*read)(uint8_t *buffer, uint32_t length);
-    int (*read_byte)(uint8_t *data);
-    int (*write)(const uint8_t *buffer, uint32_t length);
+    int (*read)(void *buffer, uint32_t length);
+    int (*read_byte)(void *data);
+    int (*write)(const void *buffer, uint32_t length);
     int (*seek)(int offset);
 };
 

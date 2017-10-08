@@ -48,13 +48,13 @@ int allocate_cluster(uint16_t *new_cluster, uint16_t cluster)
     move_to_fat_region(next_cluster);
     for (; next_cluster < layout.data_cluster_count - FIRST_CLUSTER_INDEX_IN_FAT; ++next_cluster) {
         uint16_t fat_entry;
-        dev.read((uint8_t *)&fat_entry, sizeof(fat_entry));
+        dev.read(&fat_entry, sizeof(fat_entry));
 
         /* Mark it as end of file */
         if (fat_entry == 0) {
             fat_entry = 0xFFFF;
             move_to_fat_region(next_cluster);
-            dev.write((uint8_t *)&fat_entry, sizeof(fat_entry));
+            dev.write(&fat_entry, sizeof(fat_entry));
             break;
         }
     }
@@ -67,7 +67,7 @@ int allocate_cluster(uint16_t *new_cluster, uint16_t cluster)
     /* Update current cluster to point to next one */
     if (cluster != 0) {
         move_to_fat_region(cluster);
-        dev.write((uint8_t *)&next_cluster, sizeof(next_cluster));
+        dev.write(&next_cluster, sizeof(next_cluster));
     }
 
     *new_cluster = next_cluster;
@@ -86,11 +86,11 @@ void free_cluster_chain(uint16_t cluster)
         uint16_t free_cluster = 0;
         uint16_t next_cluster;
         move_to_fat_region(cluster);
-        dev.read((uint8_t *)&next_cluster, sizeof(next_cluster));
+        dev.read(&next_cluster, sizeof(next_cluster));
 
         move_to_fat_region(cluster);
 
-        dev.write((uint8_t *)&free_cluster, sizeof(free_cluster));
+        dev.write(&free_cluster, sizeof(free_cluster));
 
         if (next_cluster >= 0xFFF8)
             break;
