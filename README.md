@@ -17,12 +17,7 @@ This driver cannot:
    - handle long names
 
 Hence, a maximum of 512 files can be handled by this driver on a FAT16 partition.
-Concerning names, they must respect this format:
-<1-8 chararcters>.<1-3 characters>
-
-Example: DATA.TXT
-
-File names are not case sensitive.
+Concerning names, they must respect the format described here: https://en.wikipedia.org/wiki/8.3_filename. Hence, all valid filenames can be stored as an array of char of length  13 characters (12 bytes for the filename and one byte for the null character).
 
 ## Build instructions
 
