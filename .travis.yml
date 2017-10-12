@@ -12,6 +12,9 @@ addons:
       - gcc-6
       - g++-6
       - cmake
+env:
+  - BUILD_TYPE=Debug
+  - BUILD_TYPE=Release
 script:
   # Export CC and CXX to tell cmake which compiler to use
   - export CC=/usr/bin/gcc-6
@@ -19,6 +22,6 @@ script:
   # Check versions of gcc, g++ and cmake
   - gcc -v && g++ -v && cmake --version
   # Run your build commands next
-  - cmake . -DCMAKE_BUILD_TYPE=Release
+  - cmake . -DCMAKE_BUILD_TYPE=${BUILD_TYPE}
   - make VERBOSE=1
   - sudo ./run_test
