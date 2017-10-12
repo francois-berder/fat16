@@ -230,7 +230,8 @@ static int fat16_open_read(uint8_t handle, char *filename)
     /* Create handle */
     memcpy(handles[handle].filename, filename, sizeof(handles[handle].filename));
     handles[handle].read_mode = READ_MODE;
-    handles[handle].entry_index = entry_index;
+    handles[handle].pos_entry = layout.start_root_directory_region;
+    handles[handle].pos_entry += entry_index * 32;
     handles[handle].cluster = entry.starting_cluster;
     handles[handle].offset = 0;
     handles[handle].remaining_bytes = entry.size;
@@ -392,7 +393,8 @@ static int fat16_open_write(uint8_t handle, char *filename)
     /* Create a handle */
     memcpy(handles[handle].filename, filename, sizeof(handles[handle].filename));
     handles[handle].read_mode = WRITE_MODE;
-    handles[handle].entry_index = entry_index;
+    handles[handle].pos_entry = layout.start_root_directory_region;
+    handles[handle].pos_entry += entry_index * 32;
     handles[handle].cluster = 0;
     handles[handle].offset = 0;
     handles[handle].remaining_bytes = 0; /* Not used in write mode */
@@ -428,16 +430,14 @@ static uint16_t read_fat_entry(uint16_t cluster)
 /**
  * @brief Update the size of file in the root entry.
  *
- * @param[in] entry_index Index of the entry in the root directory
+ * @param[in] pos_entry_index Absolute position of the file entry
  * @param[in] bytes_written_count Number of bytes appended to the file. Hence
  * the new size of the file is bytes_written_count + old_size
  */
-static void update_size_file(uint16_t entry_index, uint32_t bytes_written_count)
+static void update_size_file(uint32_t pos_entry, uint32_t bytes_written_count)
 {
     uint32_t file_size = 0;
-    uint32_t pos = layout.start_root_directory_region;
-
-    pos += entry_index * 32;
+    uint32_t pos = pos_entry;
     pos += 28; /* Offset in bytes of the file size in the entry */
 
     dev.seek(pos);
@@ -474,7 +474,7 @@ int fat16_init(struct storage_dev_t _dev)
     layout.start_root_directory_region = layout.start_fat_region + (bpb.num_fats * bpb.fat_size) * bpb.bytes_per_sector;
     layout.start_data_region = layout.start_root_directory_region + (root_directory_sector_count * bpb.bytes_per_sector);
 
-    FAT16DBG("FAT16: file system layout:\n")
+    FAT16DBG("FAT16: file system layout:\n");
     FAT16DBG("\tstart_fat_region=%08X\n", layout.start_fat_region);
     FAT16DBG("\tstart_root_directory_region=%08X\n", layout.start_root_directory_region);
     FAT16DBG("\tstart_data_region=%08X\n", layout.start_data_region);
@@ -620,10 +620,7 @@ int fat16_write(uint8_t handle, const void *buffer, uint32_t count)
 
             /* If the file was empty, update cluster in root directory entry */
             if (handles[handle].cluster == 0) {
-                uint32_t pos = layout.start_root_directory_region;
-                pos += handles[handle].entry_index * 32;
-                pos += CLUSTER_OFFSET_ROOT_DIR_ENTRY;
-                dev.seek(pos);
+                dev.seek(handles[handle].pos_entry + CLUSTER_OFFSET_ROOT_DIR_ENTRY);
                 dev.write(&new_cluster, sizeof(new_cluster));
             }
 
@@ -646,7 +643,7 @@ int fat16_write(uint8_t handle, const void *buffer, uint32_t count)
     }
 
     /* Update size of file in root directory entry */
-    update_size_file(handles[handle].entry_index, bytes_written_count);
+    update_size_file(handles[handle].pos_entry, bytes_written_count);
 
     return bytes_written_count;
 }
