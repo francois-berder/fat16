@@ -8,8 +8,8 @@ class ReadEmptyFileTest : public Test
     public :
         ReadEmptyFileTest();
 
-        virtual void init();
-        virtual bool run();
+        virtual void init() override;
+        virtual bool run() override;
 
     private :
 

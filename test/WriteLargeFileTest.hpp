@@ -9,7 +9,7 @@ class WriteLargeFileTest : public Test
 
         WriteLargeFileTest(unsigned int bytes_count);
 
-        virtual bool run();
+        virtual bool run() override;
 
     private :
 

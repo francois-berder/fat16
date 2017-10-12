@@ -9,8 +9,8 @@ class ReadLargeFileTest : public Test
 
         ReadLargeFileTest(unsigned int bytes_count);
 
-        virtual void init();
-        virtual bool run();
+        virtual void init() override;
+        virtual bool run() override;
 
     private :
 
