@@ -8,10 +8,6 @@ m_name(name)
 {
 }
 
-Test::~Test()
-{
-}
-
 void Test::init()
 {
     restore_image();

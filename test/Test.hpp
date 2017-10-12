@@ -8,7 +8,7 @@ class Test
     public :
 
         Test(const std::string &name);
-        virtual ~Test();
+        virtual ~Test() = default;
 
         virtual void init();
         virtual bool run() = 0;
