@@ -17,6 +17,7 @@
  * root directory entry.
  */
 #define CLUSTER_OFFSET_FILE_ENTRY   (26)
+#define SIZE_OFFSET_FILE_ENTRY      (28)
 
 struct fat16_layout {
     uint32_t start_fat_region;              /**< offset in bytes of first FAT */

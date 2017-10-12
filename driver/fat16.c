@@ -438,7 +438,7 @@ static void update_size_file(uint32_t pos_entry, uint32_t bytes_written_count)
 {
     uint32_t file_size = 0;
     uint32_t pos = pos_entry;
-    pos += 28; /* Offset in bytes of the file size in the entry */
+    pos += SIZE_OFFSET_FILE_ENTRY;
 
     dev.seek(pos);
     dev.read(&file_size, sizeof(file_size));
