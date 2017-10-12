@@ -331,7 +331,7 @@ static int delete_file(char *fat_filename)
     /* Find the first cluster used by the file */
     pos = layout.start_root_directory_region;
     pos += entry_index * 32;
-    pos += CLUSTER_OFFSET_ROOT_DIR_ENTRY;
+    pos += CLUSTER_OFFSET_FILE_ENTRY;
     FAT16DBG("FAT16: Moving to %08X\n", pos);
     dev.seek(pos);
     dev.read(&starting_cluster, sizeof(starting_cluster));
@@ -620,7 +620,7 @@ int fat16_write(uint8_t handle, const void *buffer, uint32_t count)
 
             /* If the file was empty, update cluster in root directory entry */
             if (handles[handle].cluster == 0) {
-                dev.seek(handles[handle].pos_entry + CLUSTER_OFFSET_ROOT_DIR_ENTRY);
+                dev.seek(handles[handle].pos_entry + CLUSTER_OFFSET_FILE_ENTRY);
                 dev.write(&new_cluster, sizeof(new_cluster));
             }
 
