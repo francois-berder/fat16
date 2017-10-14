@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include "../driver/fat16.h"
+#include "FilenameTest.hpp"
 #include "ReadEmptyFileTest.hpp"
 #include "ReadSmallFileTest.hpp"
 #include "WriteEraseContentTest.hpp"
@@ -25,6 +26,7 @@ int main()
 {
     std::vector<Test*> tests;
     std::vector<bool> test_results;
+    tests.push_back(new FilenameTest());
     tests.push_back(new ReadEmptyFileTest());
     tests.push_back(new ReadSmallFileTest());
     tests.push_back(new WriteEraseContentTest());
