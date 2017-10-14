@@ -267,6 +267,26 @@ static int find_available_entry_in_root_directory(uint16_t *entry_index)
     return -1;
 }
 
+static int create_entry_in_root_dir(uint16_t *entry_index, char *name)
+{
+    struct dir_entry entry;
+
+    /* Find a location in the root directory region */
+    if (find_available_entry_in_root_directory(entry_index) < 0)
+        return -1;
+
+    memcpy(entry.filename, name, sizeof(entry.filename));
+    entry.attribute = 0;
+    memset(entry.reserved, 0, sizeof(entry.reserved));
+    memset(entry.time, 0, sizeof(entry.time));
+    memset(entry.date, 0, sizeof(entry.date));
+    entry.starting_cluster = 0;
+    entry.size = 0;
+
+    move_to_root_directory_region(*entry_index);
+    dev.write(&entry, sizeof(struct dir_entry));
+    return 0;
+}
 
 /**
  * @brief Check if the entry is the last entry in the root directory.
@@ -349,8 +369,7 @@ static int delete_file(char *fat_filename)
  */
 static int fat16_open_write(uint8_t handle, char *filename)
 {
-    struct dir_entry entry;
-    uint16_t entry_index = 0;
+    uint16_t entry_index;
 
     /* Check that it is not opened for reading operations. */
     if (is_file_opened(filename, READ_MODE)) {
@@ -374,21 +393,8 @@ static int fat16_open_write(uint8_t handle, char *filename)
      */
     delete_file(filename);
 
-    /* Find a location in the root directory region */
-    if (find_available_entry_in_root_directory(&entry_index) < 0)
+    if (create_entry_in_root_dir(&entry_index, filename) < 0)
         return -1;
-
-    /* Create an entry in the root directory */
-    memcpy(entry.filename, filename, sizeof(entry.filename));
-    entry.attribute = 0;
-    memset(entry.reserved, 0, sizeof(entry.reserved));
-    memset(entry.time, 0, sizeof(entry.time));
-    memset(entry.date, 0, sizeof(entry.date));
-    entry.starting_cluster = 0;
-    entry.size = 0;
-
-    move_to_root_directory_region(entry_index);
-    dev.write(&entry, sizeof(struct dir_entry));
 
     /* Create a handle */
     memcpy(handles[handle].filename, filename, sizeof(handles[handle].filename));
