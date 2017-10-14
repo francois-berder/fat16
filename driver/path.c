@@ -88,3 +88,32 @@ int to_short_filename(char *short_filename, const char *long_filename)
 
     return 0;
 }
+
+int get_subdir(char *subdir_name, uint16_t *index, const char *path)
+{
+    const uint16_t beg = *index;
+    unsigned int len = 0;
+
+    if (path[beg] != '/')
+        return -1;
+
+    len++; /* Skip first slash */
+    while (path[beg + len] != '\0') {
+        if (path[beg + len] == '/')
+            break;
+
+        ++len;
+    }
+    /* Check if path is an intermediate directory */
+    if (path[beg + len] != '/')
+        return -2;
+
+    if (len > 12)
+        return -1;
+
+    memcpy(subdir_name, &path[beg], len);
+    subdir_name[len] = '\0';
+
+    *index = beg + len;
+    return 0;
+}

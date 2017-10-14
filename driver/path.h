@@ -14,4 +14,16 @@
  */
 int to_short_filename(char *short_filename, const char *long_filename);
 
+/**
+ * @brief Extract intermediate directories from path
+ *
+ * @param[out] subdir_name
+ * @param[out] index
+ * @param[in] path Must be a valid path
+ * @retval 0 if successful
+ * @retval -1 if an error occured
+ * @retval -2 if no intermediate directory was found
+ */
+int get_subdir(char *subdir_name, uint16_t *index, const char *path);
+
 #endif
