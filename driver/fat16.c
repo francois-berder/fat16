@@ -513,7 +513,7 @@ int fat16_open(const char *filename, char mode)
         return -1;
     }
 
-    if (fat16_get_short_filename(fat_filename, filename) < 0)
+    if (to_short_filename(fat_filename, filename) < 0)
         return -1;
 
     if (mode == 'r')
@@ -674,7 +674,7 @@ int fat16_delete(const char *filename)
         return -1;
     }
 
-    if (fat16_get_short_filename(fat_filename, filename) < 0)
+    if (to_short_filename(fat_filename, filename) < 0)
         return -1;
 
     if (is_file_opened(fat_filename, READ_MODE)
