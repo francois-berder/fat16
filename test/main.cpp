@@ -48,6 +48,7 @@ int main()
     tests.push_back(new LsTest(128));
     tests.push_back(new LsTest(256));
     tests.push_back(new LsTest(511));
+    tests.push_back(new LsTest(512));
 
     unsigned int failing_test_count = 0;
     for (Test *test : tests) {
