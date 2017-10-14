@@ -21,8 +21,6 @@ Concerning names, they must respect the format described here: https://en.wikipe
 
 ## Build instructions
 
-You need a relatively recent versions of gcc as tests are written using C++11 features. It is known not to compile on Ubuntu 14.04 LTS. GCC 5+ work fine.
-
 ```sh
 $ cmake .
 $ make
