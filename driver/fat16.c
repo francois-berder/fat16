@@ -691,8 +691,11 @@ int fat16_ls(uint16_t *index, char *filename)
     uint8_t name_length = 0, ext_length = 0;
     char fat_filename[11];
 
-    if (*index >= bpb.root_entry_count)
+    if (*index > bpb.root_entry_count)
         return -1;
+
+    if (*index == bpb.root_entry_count)
+        return -2;
 
     if (filename == NULL)
         return -1;
