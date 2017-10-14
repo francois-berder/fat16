@@ -8,9 +8,9 @@
 
 static bool is_character_valid(char c)
 {
-    return ('a' <= c && c <= 'z')
-           || ('A' <= c && c <= 'Z')
+    return ('A' <= c && c <= 'Z')
            || ('0' <= c && c <= '9')
+           || c == '!'
            || c == '#'
            || c == '$'
            || c == '%'
@@ -19,7 +19,13 @@ static bool is_character_valid(char c)
            || c == '('
            || c == ')'
            || c == '-'
-           || c == '@';
+           || c == '@'
+           || c == '^'
+           || c == '_'
+           || c == '`'
+           || c == '{'
+           || c == '}'
+           || c == '~';
 }
 
 int fat16_get_short_filename(char *filename, const char *path)
