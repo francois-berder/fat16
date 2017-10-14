@@ -702,16 +702,15 @@ int fat16_ls(uint16_t *index, char *filename)
            || ((uint8_t)fat_filename[0]) == ROOT_DIR_AVAILABLE_ENTRY) {
         uint8_t attribute = 0;
 
-        move_to_root_directory_region(*index);
-        dev.read(fat_filename, 11);
-        ++(*index);
-
         /*
          * If this condition is true, the end of the root directory is reached.
          * and there are no more files to be found.
          */
-        if (*index == bpb.root_entry_count)
+        if (*index >= bpb.root_entry_count)
             return -2;
+
+        move_to_root_directory_region((*index)++);
+        dev.read(fat_filename, 11);
 
         /* Also reading attribute to skip any vfat entry. */
         dev.read(&attribute, 1);
