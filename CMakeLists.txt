@@ -2,12 +2,12 @@ cmake_minimum_required(VERSION 2.8)
 
 project(fs)
 
-set(CMAKE_C_FLAGS_RELEASE "-Wall -Wextra -DNDEBUG -O2")
-set(CMAKE_C_FLAGS_DEBUG "-Wall -Wextra -ggdb3")
-set(CMAKE_C_FLAGS ${CMAKE_C_FLAGS_RELEASE})
-set(CMAKE_CXX_FLAGS_RELEASE "-std=c++11 -Wall -Wextra -DNDEBUG")
-set(CMAKE_CXX_FLAGS_DEBUG "-std=c++11 -Wall -Wextra -ggdb3")
-set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS_RELEASE})
+set(CMAKE_C_FLAGS_RELEASE "-DNDEBUG -O2")
+set(CMAKE_C_FLAGS_DEBUG "-ggdb3")
+set(CMAKE_C_FLAGS "-Wall -Wextra")
+set(CMAKE_CXX_FLAGS_RELEASE "-DNDEBUG")
+set(CMAKE_CXX_FLAGS_DEBUG "-ggdb3")
+set(CMAKE_CXX_FLAGS  "-std=c++11 -Wall -Wextra")
 
 file(GLOB_RECURSE test_files test/*.cpp test/*.c)
 file(GLOB_RECURSE source_files driver/*.c)
