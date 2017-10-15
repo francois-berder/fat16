@@ -5,6 +5,7 @@
 #include "fat16.h"
 #include "fat16_priv.h"
 #include "path.h"
+#include "rootdir.h"
 
 
 #define INVALID_HANDLE  (255)
@@ -164,45 +165,6 @@ static uint8_t find_available_handle(void)
 }
 
 /**
- * @brief Find the index of an entry based on its name.
- *
- * @param[out] entry_index
- * @param[in] filename name of the file in 8.3 format
- * @return -1 if it cannot find the entry, 0 if successful
- */
-static int find_root_directory_entry(uint16_t *entry_index, char *filename)
-{
-    uint16_t i = 0;
-
-    move_to_root_directory_region(0);
-    for (i = 0; i < bpb.root_entry_count; ++i) {
-        struct dir_entry e;
-        dev.read(&e, sizeof(struct dir_entry));
-        dump_root_entry(e);
-
-        /* Skip available entry */
-        if ((uint8_t)(e.filename[0]) == ROOT_DIR_AVAILABLE_ENTRY)
-            continue;
-
-        /* Check if we reach end of list of root directory entries */
-        if (e.filename[0] == 0)
-            break;
-
-        /* Ignore any VFAT entry */
-        if ((e.attribute & ROOT_DIR_VFAT_ENTRY) == ROOT_DIR_VFAT_ENTRY)
-            continue;
-
-        if (memcmp(filename, e.filename, sizeof(e.filename)) == 0) {
-            *entry_index = i;
-            return 0;
-        }
-    }
-
-    FAT16DBG("FAT16: File %s not found.\n", filename);
-    return -1;
-}
-
-/**
  * @brief Create a handle for reading a file.
  *
  * @param[in] handle Index to an available handle
@@ -239,93 +201,6 @@ static int fat16_open_read(uint8_t handle, char *filename)
     return handle;
 }
 
-/**
- * @brief Find an unused entry in the root directory.
- *
- * @param[out] entry_index
- * @retval -1 if there is no available entry in the root directory,
- * @reval 0 if successful
- */
-static int find_available_entry_in_root_directory(uint16_t *entry_index)
-{
-    uint16_t i = 0;
-    uint32_t pos = layout.start_root_directory_region;
-
-    do {
-        uint8_t tmp;
-        dev.read(&tmp, sizeof(tmp));
-
-        if (tmp == 0 || tmp == ROOT_DIR_AVAILABLE_ENTRY) {
-            *entry_index = i;
-            return 0;
-        }
-        ++i;
-        pos += 32;
-        dev.seek(pos);
-    } while (i < bpb.root_entry_count);
-
-    return -1;
-}
-
-static int create_entry_in_root_dir(uint16_t *entry_index, char *name)
-{
-    struct dir_entry entry;
-
-    /* Find a location in the root directory region */
-    if (find_available_entry_in_root_directory(entry_index) < 0)
-        return -1;
-
-    memcpy(entry.filename, name, sizeof(entry.filename));
-    entry.attribute = 0;
-    memset(entry.reserved, 0, sizeof(entry.reserved));
-    memset(entry.time, 0, sizeof(entry.time));
-    memset(entry.date, 0, sizeof(entry.date));
-    entry.starting_cluster = 0;
-    entry.size = 0;
-
-    move_to_root_directory_region(*entry_index);
-    dev.write(&entry, sizeof(struct dir_entry));
-    return 0;
-}
-
-/**
- * @brief Check if the entry is the last entry in the root directory.
- *
- * @param[in] entry_index
- * @return True if the entry is the last one.
- */
-static bool last_entry_in_root_directory(uint16_t entry_index)
-{
-    uint8_t tmp = 0;
-
-    if (entry_index == (bpb.root_entry_count - 1))
-        return true;
-
-    /* Check if the next entry is marked as being the end of the
-     * root directory list.
-     */
-    move_to_root_directory_region(entry_index + 1);
-    dev.read(&tmp, sizeof(tmp));
-    return tmp == 0;
-}
-
-/* @brief Indicate that a root entry is now available.
- *
- * The first byte of the entry must be 0xE5 if it is not the last
- * entry in the root directory. Otherwise, a value of 0 must be
- * written.
- *
- * @param[in] entry_index
- */
-static void mark_root_entry_as_available(uint16_t entry_index)
-{
-    uint8_t entry_marker = 0;
-
-    if (!last_entry_in_root_directory(entry_index))
-        entry_marker = ROOT_DIR_AVAILABLE_ENTRY;
-    move_to_root_directory_region(entry_index);
-    dev.write(&entry_marker, sizeof(entry_marker));
-}
 
 /**
  * @brief Delete a file.
