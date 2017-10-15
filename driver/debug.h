@@ -2,6 +2,7 @@
 #define __FAT16_DEBUG_H
 
 #ifndef LOG
+#include <stdio.h>
 #define LOG printf
 #endif
 
