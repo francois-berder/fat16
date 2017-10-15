@@ -11,4 +11,4 @@ script:
   - cppcheck -I driver/ --enable=all --inconclusive --platform=unix64 --std=c89 --error-exitcode=2 -f driver/
   - cmake . -DCMAKE_BUILD_TYPE=${BUILD_TYPE}
   - make VERBOSE=1
-  - sudo ./run_test
+  - if [ "${BUILD_TYPE}" = "Release" ]; then sudo ./run_test; fi
