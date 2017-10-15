@@ -421,19 +421,6 @@ static bool check_handle(uint8_t handle)
 }
 
 /**
- * @brief Read the cluster status in the FAT.
- */
-static uint16_t read_fat_entry(uint16_t cluster)
-{
-    uint16_t fat_entry = 0;
-
-    move_to_fat_region(cluster);
-    dev.read(&fat_entry, sizeof(fat_entry));
-
-    return fat_entry;
-}
-
-/**
  * @brief Update the size of file in the root entry.
  *
  * @param[in] pos_entry_index Absolute position of the file entry
@@ -570,10 +557,11 @@ int fat16_read(uint8_t handle, void *buffer, uint32_t count)
 
             /* Look for the next cluster in the FAT, unless we are already reading the last one */
             if (handles[handle].remaining_bytes != 0) {
-                uint16_t fat_entry = read_fat_entry(handles[handle].cluster);
-                /* @todo check fat entry */
+                uint16_t next_cluster;
+                if (get_next_cluster(&next_cluster, handles[handle].cluster) < 0)
+                    return -1;
 
-                handles[handle].cluster = fat_entry;
+                handles[handle].cluster = next_cluster;
 
                 move_to_data_region(handles[handle].cluster, handles[handle].offset);
             }

@@ -111,4 +111,13 @@ int allocate_cluster(uint16_t *new_cluster, uint16_t cluster);
  */
 void free_cluster_chain(uint16_t cluster);
 
+/**
+ * @brief Get next cluster
+ *
+ * @param[out] next_cluster
+ * @param[in] cluster
+ * @return 0 if successful, -1 otherwise
+ */
+int get_next_cluster(uint16_t *next_cluster, uint16_t cluster);
+
 #endif

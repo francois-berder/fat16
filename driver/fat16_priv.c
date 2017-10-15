@@ -129,3 +129,11 @@ void free_cluster_chain(uint16_t cluster)
         cluster = next_cluster;
     } while (1);
 }
+
+int get_next_cluster(uint16_t *next_cluster, uint16_t cluster)
+{
+    move_to_fat_region(cluster);
+    dev.read(next_cluster, sizeof(cluster));
+
+    return 0;
+}
