@@ -92,7 +92,7 @@ static int find_root_directory_entry(uint16_t *entry_index, char *filename)
     return -1;
 }
 
-int create_file_in_root(char *filename)
+static int create_entry_in_root(char *name, uint8_t attribute)
 {
     uint16_t entry_index;
     struct dir_entry entry;
@@ -101,8 +101,8 @@ int create_file_in_root(char *filename)
     if (find_available_entry_in_root_directory(&entry_index) < 0)
         return -1;
 
-    memcpy(entry.filename, filename, sizeof(entry.filename));
-    entry.attribute = 0;
+    memcpy(entry.filename, name, sizeof(entry.filename));
+    entry.attribute = attribute;
     memset(entry.reserved, 0, sizeof(entry.reserved));
     memset(entry.time, 0, sizeof(entry.time));
     memset(entry.date, 0, sizeof(entry.date));
@@ -112,6 +112,16 @@ int create_file_in_root(char *filename)
     move_to_root_directory_region(entry_index);
     dev.write(&entry, sizeof(struct dir_entry));
     return 0;
+}
+
+int create_file_in_root(char *filename)
+{
+    return create_entry_in_root(filename, 0);
+}
+
+int create_directory_in_root(char *dirname)
+{
+    return create_entry_in_root(dirname, SUBDIR);
 }
 
 int open_file_in_root(struct file_handle *handle, char *filename, bool read_mode)

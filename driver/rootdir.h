@@ -14,6 +14,15 @@
 int create_file_in_root(char *filename);
 
 /**
+ * @brief Create a file in the root directory
+ *
+ * @param[in] name 8.3 short filename
+ * @retval -1 if there is no available entry in the root directory,
+ * @reval 0 if successful
+ */
+int create_directory_in_root(char *dirname);
+
+/**
  * @brief Open a file located in the root directory
  *
  * @param[out] handle
