@@ -136,13 +136,20 @@ int open_file_in_root(struct file_handle *handle, char *filename, bool read_mode
     if (find_root_directory_entry(&entry_index, filename) < 0)
         return -1;
 
-    memcpy(handle->filename, filename, sizeof(handle->filename));
-    handle->read_mode = read_mode;
     handle->pos_entry = layout.start_root_directory_region;
     handle->pos_entry += entry_index * 32;
-
     dev.seek(handle->pos_entry);
     dev.read(&entry, sizeof(struct dir_entry));
+
+    /* Check that we are opening a file and not something else */
+    if (entry.attribute & VOLUME
+    ||  entry.attribute & SUBDIR
+    ||  entry.attribute & SYSTEM)
+        return -1;
+
+    memcpy(handle->filename, filename, sizeof(handle->filename));
+    handle->read_mode = read_mode;
+
     handle->cluster = entry.starting_cluster;
     handle->offset = 0;
     if (read_mode == WRITE_MODE)
