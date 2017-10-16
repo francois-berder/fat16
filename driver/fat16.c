@@ -558,3 +558,24 @@ int fat16_ls(uint16_t *index, char *filename)
 
     return 0;
 }
+
+int fat16_mkdir(const char *dirpath)
+{
+    int ret;
+    uint16_t index = 0;
+    char subdir_name[13];
+
+    ret = get_subdir(subdir_name, &index, dirpath);
+    if (ret < 0) {
+        char dirname[11];
+
+        if (to_short_filename(dirname, dirpath) < 0)
+            return -1;
+
+        return create_directory_in_root(dirname);
+    }
+
+    /* mkdir in subdirectories not implemented yet ! */
+
+    return -1;
+}
