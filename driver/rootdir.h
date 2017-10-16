@@ -40,4 +40,15 @@ void mark_root_entry_as_available(uint16_t entry_index);
  */
 int find_root_directory_entry(uint16_t *entry_index, char *filename);
 
+/**
+ * @brief Delete a file.
+ *
+ * Remove the entry from the and mark all clusters used by this file as
+ * available. It does not clear the data region.
+ *
+ * @param[in] fat_filename Name of the filename in 8.3 format
+ * @return 0 if successful, -1 otherwise
+ */
+int delete_file_in_root(char *filename);
+
 #endif

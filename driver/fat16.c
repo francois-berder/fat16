@@ -201,40 +201,6 @@ static int fat16_open_read(uint8_t handle, char *filename)
     return handle;
 }
 
-
-/**
- * @brief Delete a file.
- *
- * Remove the entry from the and mark all clusters used by this file as
- * available. It does not clear the data region.
- *
- * @param[in] fat_filename Name of the filename in 8.3 format
- * @return 0 if successful, -1 otherwise
- */
-static int delete_file(char *fat_filename)
-{
-    uint16_t entry_index = 0;
-    uint32_t pos = 0;
-    uint16_t starting_cluster = 0;
-
-    /* Find the file in the root directory */
-    if (find_root_directory_entry(&entry_index, fat_filename) < 0)
-        return -1;
-
-    mark_root_entry_as_available(entry_index);
-
-    /* Find the first cluster used by the file */
-    pos = layout.start_root_directory_region;
-    pos += entry_index * 32;
-    pos += CLUSTER_OFFSET_FILE_ENTRY;
-    FAT16DBG("FAT16: Moving to %08X\n", pos);
-    dev.seek(pos);
-    dev.read(&starting_cluster, sizeof(starting_cluster));
-    free_cluster_chain(starting_cluster);
-
-    return 0;
-}
-
 /**
  * @brief Create a handle and an entry in the FAT.
  *
@@ -266,7 +232,7 @@ static int fat16_open_write(uint8_t handle, char *filename)
      * Discard any previous content.
      * Do not check return value because the file may not exist.
      */
-    delete_file(filename);
+    delete_file_in_root(filename);
 
     if (create_entry_in_root_dir(&entry_index, filename) < 0)
         return -1;
@@ -546,7 +512,7 @@ int fat16_delete(const char *filename)
         return -1;
     }
 
-    return delete_file(fat_filename);
+    return delete_file_in_root(fat_filename);
 }
 
 int fat16_ls(uint16_t *index, char *filename)
