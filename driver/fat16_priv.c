@@ -10,7 +10,7 @@ extern struct fat16_bpb bpb;
 void dump_root_entry(struct dir_entry e)
 {
 #ifndef NDEBUG
-    FAT16DBG("FAT16: filename: %s\n", e.filename);
+    FAT16DBG("FAT16: name: %s\n", e.name);
     FAT16DBG("FAT16: attribute: ");
     if (e.attribute & READ_ONLY)
         FAT16DBG("FAT16: read-only ");

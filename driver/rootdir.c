@@ -60,7 +60,7 @@ static void mark_root_entry_as_available(uint16_t entry_index)
     dev.write(&entry_marker, sizeof(entry_marker));
 }
 
-static int find_root_directory_entry(uint16_t *entry_index, char *filename)
+static int find_root_directory_entry(uint16_t *entry_index, char *name)
 {
     uint16_t i = 0;
 
@@ -71,24 +71,24 @@ static int find_root_directory_entry(uint16_t *entry_index, char *filename)
         dump_root_entry(e);
 
         /* Skip available entry */
-        if ((uint8_t)(e.filename[0]) == ROOT_DIR_AVAILABLE_ENTRY)
+        if ((uint8_t)(e.name[0]) == ROOT_DIR_AVAILABLE_ENTRY)
             continue;
 
         /* Do not allow filename to start with a NULL character */
-        if (e.filename[0] == 0)
+        if (e.name[0] == 0)
             continue;
 
         /* Ignore any VFAT entry */
         if ((e.attribute & ROOT_DIR_VFAT_ENTRY) == ROOT_DIR_VFAT_ENTRY)
             continue;
 
-        if (memcmp(filename, e.filename, sizeof(e.filename)) == 0) {
+        if (memcmp(name, e.name, sizeof(e.name)) == 0) {
             *entry_index = i;
             return 0;
         }
     }
 
-    FAT16DBG("FAT16: File %s not found.\n", filename);
+    FAT16DBG("FAT16: File %s not found.\n", name);
     return -1;
 }
 
@@ -101,7 +101,7 @@ static int create_entry_in_root(char *name, uint8_t attribute)
     if (find_available_entry_in_root_directory(&entry_index) < 0)
         return -1;
 
-    memcpy(entry.filename, name, sizeof(entry.filename));
+    memcpy(entry.name, name, sizeof(entry.name));
     entry.attribute = attribute;
     memset(entry.reserved, 0, sizeof(entry.reserved));
     memset(entry.time, 0, sizeof(entry.time));

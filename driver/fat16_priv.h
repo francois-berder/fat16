@@ -50,7 +50,7 @@ struct file_handle {
 };
 
 struct dir_entry {
-    char        filename[11];
+    char        name[11];
     uint8_t     attribute;
     uint8_t     reserved[10];
     uint8_t     time[2];
