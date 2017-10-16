@@ -97,6 +97,10 @@ static int create_entry_in_root(char *name, uint8_t attribute)
     uint16_t entry_index;
     struct dir_entry entry;
 
+    /* Do not allow muliple entries with same name */
+    if (find_root_directory_entry(&entry_index, name) == 0)
+        return -1;
+
     /* Find a location in the root directory region */
     if (find_available_entry_in_root_directory(&entry_index) < 0)
         return -1;
