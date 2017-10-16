@@ -8,7 +8,7 @@ extern struct storage_dev_t dev;
 extern struct fat16_layout layout;
 extern struct fat16_bpb bpb;
 
-int find_available_entry_in_root_directory(uint16_t *entry_index)
+static int find_available_entry_in_root_directory(uint16_t *entry_index)
 {
     uint16_t i = 0;
     uint32_t pos = layout.start_root_directory_region;
@@ -50,7 +50,7 @@ static bool last_entry_in_root_directory(uint16_t entry_index)
     return tmp == 0;
 }
 
-void mark_root_entry_as_available(uint16_t entry_index)
+static void mark_root_entry_as_available(uint16_t entry_index)
 {
     uint8_t entry_marker = 0;
 
@@ -60,7 +60,7 @@ void mark_root_entry_as_available(uint16_t entry_index)
     dev.write(&entry_marker, sizeof(entry_marker));
 }
 
-int find_root_directory_entry(uint16_t *entry_index, char *filename)
+static int find_root_directory_entry(uint16_t *entry_index, char *filename)
 {
     uint16_t i = 0;
 
