@@ -68,7 +68,7 @@ static int find_root_directory_entry(uint16_t *entry_index, char *name)
     for (i = 0; i < bpb.root_entry_count; ++i) {
         struct dir_entry e;
         dev.read(&e, sizeof(struct dir_entry));
-        dump_root_entry(e);
+        dump_dir_entry(e);
 
         /* Skip available entry */
         if ((uint8_t)(e.name[0]) == ROOT_DIR_AVAILABLE_ENTRY)

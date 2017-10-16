@@ -7,7 +7,7 @@ extern struct storage_dev_t dev;
 extern struct fat16_layout layout;
 extern struct fat16_bpb bpb;
 
-void dump_root_entry(struct dir_entry e)
+void dump_dir_entry(struct dir_entry e)
 {
 #ifndef NDEBUG
     FAT16DBG("FAT16: name: %s\n", e.name);
