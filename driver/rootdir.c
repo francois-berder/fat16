@@ -74,9 +74,9 @@ int find_root_directory_entry(uint16_t *entry_index, char *filename)
         if ((uint8_t)(e.filename[0]) == ROOT_DIR_AVAILABLE_ENTRY)
             continue;
 
-        /* Check if we reach end of list of root directory entries */
+        /* Do not allow filename to start with a NULL character */
         if (e.filename[0] == 0)
-            break;
+            continue;
 
         /* Ignore any VFAT entry */
         if ((e.attribute & ROOT_DIR_VFAT_ENTRY) == ROOT_DIR_VFAT_ENTRY)
