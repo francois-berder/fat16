@@ -147,6 +147,9 @@ int open_file_in_root(struct file_handle *handle, char *filename, bool read_mode
     ||  entry.attribute & SYSTEM)
         return -1;
 
+    if (entry.attribute & READ_ONLY && read_mode != READ_MODE)
+        return -1;
+
     memcpy(handle->filename, filename, sizeof(handle->filename));
     handle->read_mode = read_mode;
 
