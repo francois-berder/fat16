@@ -29,27 +29,6 @@ int find_available_entry_in_root_directory(uint16_t *entry_index)
     return -1;
 }
 
-int create_entry_in_root_dir(uint16_t *entry_index, char *name)
-{
-    struct dir_entry entry;
-
-    /* Find a location in the root directory region */
-    if (find_available_entry_in_root_directory(entry_index) < 0)
-        return -1;
-
-    memcpy(entry.filename, name, sizeof(entry.filename));
-    entry.attribute = 0;
-    memset(entry.reserved, 0, sizeof(entry.reserved));
-    memset(entry.time, 0, sizeof(entry.time));
-    memset(entry.date, 0, sizeof(entry.date));
-    entry.starting_cluster = 0;
-    entry.size = 0;
-
-    move_to_root_directory_region(*entry_index);
-    dev.write(&entry, sizeof(struct dir_entry));
-    return 0;
-}
-
 /**
  * @brief Check if the entry is the last entry in the root directory.
  *
@@ -111,6 +90,53 @@ int find_root_directory_entry(uint16_t *entry_index, char *filename)
 
     FAT16DBG("FAT16: File %s not found.\n", filename);
     return -1;
+}
+
+int create_file_in_root(char *filename)
+{
+    uint16_t entry_index;
+    struct dir_entry entry;
+
+    /* Find a location in the root directory region */
+    if (find_available_entry_in_root_directory(&entry_index) < 0)
+        return -1;
+
+    memcpy(entry.filename, filename, sizeof(entry.filename));
+    entry.attribute = 0;
+    memset(entry.reserved, 0, sizeof(entry.reserved));
+    memset(entry.time, 0, sizeof(entry.time));
+    memset(entry.date, 0, sizeof(entry.date));
+    entry.starting_cluster = 0;
+    entry.size = 0;
+
+    move_to_root_directory_region(entry_index);
+    dev.write(&entry, sizeof(struct dir_entry));
+    return 0;
+}
+
+int open_file_in_root(struct file_handle *handle, char *filename, bool read_mode)
+{
+    uint16_t entry_index;
+    struct dir_entry entry;
+
+    if (find_root_directory_entry(&entry_index, filename) < 0)
+        return -1;
+
+    memcpy(handle->filename, filename, sizeof(handle->filename));
+    handle->read_mode = read_mode;
+    handle->pos_entry = layout.start_root_directory_region;
+    handle->pos_entry += entry_index * 32;
+
+    dev.seek(handle->pos_entry);
+    dev.read(&entry, sizeof(struct dir_entry));
+    handle->cluster = entry.starting_cluster;
+    handle->offset = 0;
+    if (read_mode == WRITE_MODE)
+        handle->remaining_bytes = 0;
+    else
+        handle->remaining_bytes = entry.size;
+
+    return 0;
 }
 
 int delete_file_in_root(char *filename)

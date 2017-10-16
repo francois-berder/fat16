@@ -173,30 +173,14 @@ static uint8_t find_available_handle(void)
  */
 static int fat16_open_read(uint8_t handle, char *filename)
 {
-    uint16_t entry_index = 0;
-    struct dir_entry entry;
-
     /* Check that it is not opened for writing operations. */
     if (is_file_opened(filename, WRITE_MODE)) {
         FAT16DBG("FAT16: Cannot read from file while writing to it.\n");
         return -1;
     }
 
-    /* Find the file in the root directory */
-    if (find_root_directory_entry(&entry_index, filename) < 0)
+    if (open_file_in_root(&handles[handle], filename, READ_MODE) < 0)
         return -1;
-
-    move_to_root_directory_region(entry_index);
-    dev.read(&entry, sizeof(struct dir_entry));
-
-    /* Create handle */
-    memcpy(handles[handle].filename, filename, sizeof(handles[handle].filename));
-    handles[handle].read_mode = READ_MODE;
-    handles[handle].pos_entry = layout.start_root_directory_region;
-    handles[handle].pos_entry += entry_index * 32;
-    handles[handle].cluster = entry.starting_cluster;
-    handles[handle].offset = 0;
-    handles[handle].remaining_bytes = entry.size;
 
     return handle;
 }
@@ -210,8 +194,6 @@ static int fat16_open_read(uint8_t handle, char *filename)
  */
 static int fat16_open_write(uint8_t handle, char *filename)
 {
-    uint16_t entry_index;
-
     /* Check that it is not opened for reading operations. */
     if (is_file_opened(filename, READ_MODE)) {
         FAT16DBG("FAT16: Cannot write to file while reading from it.\n");
@@ -234,17 +216,11 @@ static int fat16_open_write(uint8_t handle, char *filename)
      */
     delete_file_in_root(filename);
 
-    if (create_entry_in_root_dir(&entry_index, filename) < 0)
+    if (create_file_in_root(filename) < 0)
         return -1;
 
-    /* Create a handle */
-    memcpy(handles[handle].filename, filename, sizeof(handles[handle].filename));
-    handles[handle].read_mode = WRITE_MODE;
-    handles[handle].pos_entry = layout.start_root_directory_region;
-    handles[handle].pos_entry += entry_index * 32;
-    handles[handle].cluster = 0;
-    handles[handle].offset = 0;
-    handles[handle].remaining_bytes = 0; /* Not used in write mode */
+    if (open_file_in_root(&handles[handle], filename, WRITE_MODE) < 0)
+        return -1;
 
     return handle;
 }

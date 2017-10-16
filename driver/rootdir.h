@@ -11,16 +11,6 @@
 int find_available_entry_in_root_directory(uint16_t *entry_index);
 
 /**
- * @brief Create an entry in the root directory
- *
- * @param[out] entry_index
- * @param[in] name 8.3 short filename
- * @retval -1 if there is no available entry in the root directory,
- * @reval 0 if successful
- */
-int create_entry_in_root_dir(uint16_t *entry_index, char *name);
-
-/**
  * @brief Indicate that a root entry is now available.
  *
  * The first byte of the entry must be 0xE5 if it is not the last
@@ -39,6 +29,25 @@ void mark_root_entry_as_available(uint16_t entry_index);
  * @return -1 if it cannot find the entry, 0 if successful
  */
 int find_root_directory_entry(uint16_t *entry_index, char *filename);
+
+/**
+ * @brief Create a file in the root directory
+ *
+ * @param[in] name 8.3 short filename
+ * @retval -1 if there is no available entry in the root directory,
+ * @reval 0 if successful
+ */
+int create_file_in_root(char *filename);
+
+/**
+ * @brief Open a file located in the root directory
+ *
+ * @param[out] handle
+ * @param[in] name 8.3 short filename
+ * @param[in] read_mode
+ * @return 0 if successful, -1 otherwise
+ */
+int open_file_in_root(struct file_handle *handle, char *filename, bool read_mode);
 
 /**
  * @brief Delete a file.
