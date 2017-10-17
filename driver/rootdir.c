@@ -167,22 +167,26 @@ int delete_file_in_root(char *filename)
 {
     uint16_t entry_index = 0;
     uint32_t pos = 0;
-    uint16_t starting_cluster = 0;
+    struct dir_entry entry;
 
-    /* Find the file in the root directory */
+    /* Find the entry in the root directory */
     if (find_root_directory_entry(&entry_index, filename) < 0)
         return -1;
 
-    mark_root_entry_as_available(entry_index);
-
-    /* Find the first cluster used by the file */
     pos = layout.start_root_directory_region;
     pos += entry_index * 32;
-    pos += CLUSTER_OFFSET_FILE_ENTRY;
-    FAT16DBG("FAT16: Moving to %08X\n", pos);
     dev.seek(pos);
-    dev.read(&starting_cluster, sizeof(starting_cluster));
-    free_cluster_chain(starting_cluster);
+    dev.read(&entry, sizeof(entry));
+
+    /* Check that the entry is a file */
+    if (entry.attribute & VOLUME
+    ||  entry.attribute & SUBDIR
+    ||  entry.attribute & SYSTEM)
+        return -1;
+
+
+    mark_root_entry_as_available(entry_index);
+    free_cluster_chain(entry.starting_cluster);
 
     return 0;
 }
