@@ -1,4 +1,4 @@
-# FAT16 driver [![Build Status](https://travis-ci.org/francois-berder/fs.svg?branch=master)](https://travis-ci.org/francois-berder/fs)
+# FAT16 driver [![Build Status](https://travis-ci.org/francois-berder/fat16.svg?branch=master)](https://travis-ci.org/francois-berder/fat16)
 
 This aim of this project is to create a small program able to read FAT16 image on Linux. This project has also been ported to a PIC24, see [BoatController](https://github.com/francois-berder/BoatController).
 The data folder contains images used to test the program.
