@@ -7,16 +7,16 @@
 /**
  * @brief Create a file in the root directory
  *
- * @param[in] name 8.3 short filename
+ * @param[in] filename 8.3 short filename
  * @retval -1 if there is no available entry in the root directory,
  * @reval 0 if successful
  */
 int create_file_in_root(char *filename);
 
 /**
- * @brief Create a file in the root directory
+ * @brief Create a directory in the root directory
  *
- * @param[in] name 8.3 short filename
+ * @param[in] dirname 8.3 short filename
  * @retval -1 if there is no available entry in the root directory,
  * @reval 0 if successful
  */
