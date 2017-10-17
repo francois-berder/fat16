@@ -43,7 +43,7 @@ int to_short_filename(char *short_filename, const char *long_filename)
     for (i = 0; i < 9; ++i) {
         /* If that is already the end of file, fill with spaces and exit */
         if (long_filename[i] == '\0') {
-            memset(&short_filename[i+1], ' ', 11 - i);
+            memset(&short_filename[i], ' ', 11 - i);
             return 0;
         }
 
