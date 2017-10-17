@@ -33,6 +33,15 @@ int create_directory_in_root(char *dirname);
 int open_file_in_root(struct file_handle *handle, char *filename, bool read_mode);
 
 /**
+ * @brief Open a directory located in the root directory
+ *
+ * @param[out] handle
+ * @param[in] dirname 8.3 short filename
+ * @return 0 if successful, -1 otherwise
+ */
+int open_directory_in_root(struct file_handle *handle, char *dirname);
+
+/**
  * @brief Delete a file.
  *
  * Remove the entry from the and mark all clusters used by this file as

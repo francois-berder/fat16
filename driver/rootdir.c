@@ -128,12 +128,12 @@ int create_directory_in_root(char *dirname)
     return create_entry_in_root(dirname, SUBDIR);
 }
 
-int open_file_in_root(struct file_handle *handle, char *filename, bool read_mode)
+static int open_entry_in_root(struct file_handle *handle, char *name, bool read_mode, bool is_file)
 {
     uint16_t entry_index;
     struct dir_entry entry;
 
-    if (find_root_directory_entry(&entry_index, filename) < 0)
+    if (find_root_directory_entry(&entry_index, name) < 0)
         return -1;
 
     handle->pos_entry = layout.start_root_directory_region;
@@ -143,14 +143,15 @@ int open_file_in_root(struct file_handle *handle, char *filename, bool read_mode
 
     /* Check that we are opening a file and not something else */
     if (entry.attribute & VOLUME
-    ||  entry.attribute & SUBDIR
     ||  entry.attribute & SYSTEM)
+        return -1;
+    if (is_file && entry.attribute & SUBDIR)
         return -1;
 
     if (entry.attribute & READ_ONLY && read_mode != READ_MODE)
         return -1;
 
-    memcpy(handle->filename, filename, sizeof(handle->filename));
+    memcpy(handle->filename, name, sizeof(handle->filename));
     handle->read_mode = read_mode;
 
     handle->cluster = entry.starting_cluster;
@@ -161,6 +162,16 @@ int open_file_in_root(struct file_handle *handle, char *filename, bool read_mode
         handle->remaining_bytes = entry.size;
 
     return 0;
+}
+
+int open_file_in_root(struct file_handle *handle, char *filename, bool read_mode)
+{
+    return open_entry_in_root(handle, filename, read_mode, true);
+}
+
+int open_directory_in_root(struct file_handle *handle, char *dirname)
+{
+    return open_entry_in_root(handle, dirname, true, false);
 }
 
 int delete_file_in_root(char *filename)
