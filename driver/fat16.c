@@ -329,9 +329,6 @@ int fat16_open(const char *filename, char mode)
 
 int fat16_read(uint8_t handle, void *buffer, uint32_t count)
 {
-    uint32_t bytes_read_count = 0;
-    uint8_t *bytes = (uint8_t *)buffer;
-
     if (check_handle(handle) == false) {
         FAT16DBG("FAT16: fat16_read: Invalid handle.\n");
         return -1;
@@ -342,52 +339,7 @@ int fat16_read(uint8_t handle, void *buffer, uint32_t count)
         return -1;
     }
 
-    /* Check if we reach end of file */
-    if (handles[handle].remaining_bytes == 0)
-        return 0;
-
-    move_to_data_region(handles[handle].cluster, handles[handle].offset);
-
-    /* Read in chunk until count is 0 or end of file is reached */
-    while (count > 0) {
-        uint32_t chunk_length = count, bytes_remaining_in_cluster = 0;
-
-        /* Check if we reach end of file */
-        if (handles[handle].remaining_bytes == 0)
-            return bytes_read_count;
-
-        /* Check that we read within the boundary of the current cluster */
-        bytes_remaining_in_cluster = bpb.sectors_per_cluster * bpb.bytes_per_sector - handles[handle].offset;
-        if (chunk_length > bytes_remaining_in_cluster)
-            chunk_length = bytes_remaining_in_cluster;
-
-        /* Check that we do not read past the end of file */
-        if (chunk_length > handles[handle].remaining_bytes)
-            chunk_length = handles[handle].remaining_bytes;
-
-        dev.read(&bytes[bytes_read_count], chunk_length);
-
-        handles[handle].remaining_bytes -= chunk_length;
-        handles[handle].offset += chunk_length;
-        if (handles[handle].offset == bpb.sectors_per_cluster * bpb.bytes_per_sector) {
-            handles[handle].offset = 0;
-
-            /* Look for the next cluster in the FAT, unless we are already reading the last one */
-            if (handles[handle].remaining_bytes != 0) {
-                uint16_t next_cluster;
-                if (get_next_cluster(&next_cluster, handles[handle].cluster) < 0)
-                    return -1;
-
-                handles[handle].cluster = next_cluster;
-
-                move_to_data_region(handles[handle].cluster, handles[handle].offset);
-            }
-        }
-        count -= chunk_length;
-        bytes_read_count += chunk_length;
-    }
-
-    return bytes_read_count;
+    return read_from_handle(&handles[handle], buffer, count);
 }
 
 int fat16_write(uint8_t handle, const void *buffer, uint32_t count)

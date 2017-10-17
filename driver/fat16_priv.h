@@ -120,4 +120,14 @@ void free_cluster_chain(uint16_t cluster);
  */
 int get_next_cluster(uint16_t *next_cluster, uint16_t cluster);
 
+/**
+ * @brief Read bytes from file/directory using handle
+ *
+ * @param[in] handle
+ * @param[in] buffer
+ * @param[in] count
+ * @return number of bytes read, -1 if an error happened
+ */
+int read_from_handle(struct file_handle *handle, void *buffer, uint32_t count);
+
 #endif

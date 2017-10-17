@@ -137,3 +137,56 @@ int get_next_cluster(uint16_t *next_cluster, uint16_t cluster)
 
     return 0;
 }
+
+int read_from_handle(struct file_handle *handle, void *buffer, uint32_t count)
+{
+    uint32_t bytes_read_count = 0;
+    uint8_t *bytes = (uint8_t *)buffer;
+
+    /* Check if we reach end of file */
+    if (handle->remaining_bytes == 0)
+        return 0;
+
+    move_to_data_region(handle->cluster, handle->offset);
+
+    /* Read in chunk until count is 0 or end of file is reached */
+    while (count > 0) {
+        uint32_t chunk_length = count, bytes_remaining_in_cluster = 0;
+
+        /* Check if we reach end of file */
+        if (handle->remaining_bytes == 0)
+            return bytes_read_count;
+
+        /* Check that we read within the boundary of the current cluster */
+        bytes_remaining_in_cluster = bpb.sectors_per_cluster * bpb.bytes_per_sector - handle->offset;
+        if (chunk_length > bytes_remaining_in_cluster)
+            chunk_length = bytes_remaining_in_cluster;
+
+        /* Check that we do not read past the end of file */
+        if (chunk_length > handle->remaining_bytes)
+            chunk_length = handle->remaining_bytes;
+
+        dev.read(&bytes[bytes_read_count], chunk_length);
+
+        handle->remaining_bytes -= chunk_length;
+        handle->offset += chunk_length;
+        if (handle->offset == bpb.sectors_per_cluster * bpb.bytes_per_sector) {
+            handle->offset = 0;
+
+            /* Look for the next cluster in the FAT, unless we are already reading the last one */
+            if (handle->remaining_bytes != 0) {
+                uint16_t next_cluster;
+                if (get_next_cluster(&next_cluster, handle->cluster) < 0)
+                    return -1;
+
+                handle->cluster = next_cluster;
+
+                move_to_data_region(handle->cluster, handle->offset);
+            }
+        }
+        count -= chunk_length;
+        bytes_read_count += chunk_length;
+    }
+
+    return bytes_read_count;
+}
