@@ -194,3 +194,18 @@ int read_from_handle(struct file_handle *handle, void *buffer, uint32_t count)
 
     return bytes_read_count;
 }
+
+void update_size_file(uint32_t pos_entry, uint32_t bytes_written_count)
+{
+    uint32_t file_size = 0;
+    uint32_t pos = pos_entry;
+    pos += SIZE_OFFSET_FILE_ENTRY;
+
+    dev.seek(pos);
+    dev.read(&file_size, sizeof(file_size));
+
+    file_size += bytes_written_count;
+
+    dev.seek(pos);
+    dev.write(&file_size, sizeof(file_size));
+}

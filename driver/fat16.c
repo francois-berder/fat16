@@ -237,28 +237,6 @@ static bool check_handle(uint8_t handle)
     return true;
 }
 
-/**
- * @brief Update the size of file in the root entry.
- *
- * @param[in] pos_entry_index Absolute position of the file entry
- * @param[in] bytes_written_count Number of bytes appended to the file. Hence
- * the new size of the file is bytes_written_count + old_size
- */
-static void update_size_file(uint32_t pos_entry, uint32_t bytes_written_count)
-{
-    uint32_t file_size = 0;
-    uint32_t pos = pos_entry;
-    pos += SIZE_OFFSET_FILE_ENTRY;
-
-    dev.seek(pos);
-    dev.read(&file_size, sizeof(file_size));
-
-    file_size += bytes_written_count;
-
-    dev.seek(pos);
-    dev.write(&file_size, sizeof(file_size));
-}
-
 int fat16_init(struct storage_dev_t _dev)
 {
     uint32_t data_sector_count, root_directory_sector_count;

@@ -130,4 +130,12 @@ int get_next_cluster(uint16_t *next_cluster, uint16_t cluster);
  */
 int read_from_handle(struct file_handle *handle, void *buffer, uint32_t count);
 
+/**
+ * @brief Increase size file and store it in its entry
+ *
+ * @param[in] pos_entry Absolute position of the file entry
+ * @param[in] bytes_written_count
+ */
+void update_size_file(uint32_t pos_entry, uint32_t bytes_written_count);
+
 #endif
