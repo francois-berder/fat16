@@ -12,6 +12,7 @@
 #include "ReadLargeFileTest.hpp"
 #include "LsTest.hpp"
 #include "MkdirTest.hpp"
+#include "Common.hpp"
 
 #define SECTOR_SIZE (2048)
 
@@ -51,6 +52,10 @@ int main()
     tests.push_back(new LsTest(511));
     tests.push_back(new LsTest(512));
     tests.push_back(new MkdirTest());
+
+    /* Ensure that we start with a clean image */
+    unmount_image();
+    restore_image();
 
     unsigned int failing_test_count = 0;
     for (Test *test : tests) {
