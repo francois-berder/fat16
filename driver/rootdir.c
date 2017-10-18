@@ -12,6 +12,7 @@ static int find_available_entry_in_root_directory(uint16_t *entry_index)
 {
     uint16_t i = 0;
     uint32_t pos = layout.start_root_directory_region;
+    dev.seek(pos);
 
     do {
         uint8_t tmp;
