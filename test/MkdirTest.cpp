@@ -24,5 +24,14 @@ bool MkdirTest::run()
     if (fat16_open("/TMP", 'w') == 0)
         return false;
 
+    if (fat16_mkdir("/IMAGES") < 0)
+        return false;
+    if (fat16_mkdir("/IMAGES/JPEG") < 0)
+        return false;
+    if (fat16_mkdir("/IMAGES/PNG") < 0)
+        return false;
+    if (fat16_mkdir("/IMAGES/BMP") < 0)
+        return false;
+
     return true;
 }
