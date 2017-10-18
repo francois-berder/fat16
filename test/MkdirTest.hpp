@@ -9,6 +9,7 @@ class MkdirTest : public Test
 
         MkdirTest();
 
+        virtual void init() override;
         virtual bool run() override;
 };
 

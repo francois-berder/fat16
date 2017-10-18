@@ -10,6 +10,15 @@ Test("MkdirTest")
 
 }
 
+void MkdirTest::init()
+{
+    restore_image();
+    mount_image();
+    system("mkdir /mnt/MUSIC");
+    unmount_image();
+    load_image();
+}
+
 bool MkdirTest::run()
 {
     if (fat16_init(linux_dev) < 0)
@@ -31,6 +40,15 @@ bool MkdirTest::run()
     if (fat16_mkdir("/IMAGES/PNG") < 0)
         return false;
     if (fat16_mkdir("/IMAGES/BMP") < 0)
+        return false;
+
+    if (fat16_mkdir("/MUSIC/MP3") < 0)
+        return false;
+    if (fat16_mkdir("/MUSIC/MP3/OLD") < 0)
+        return false;
+    if (fat16_mkdir("/MUSIC/MP3/NEW") < 0)
+        return false;
+    if (fat16_mkdir("/MUSIC/OGG") < 0)
         return false;
 
     return true;
