@@ -195,7 +195,7 @@ int read_from_handle(struct file_handle *handle, void *buffer, uint32_t count)
     return bytes_read_count;
 }
 
-void update_size_file(uint32_t pos_entry, uint32_t bytes_written_count)
+static void update_size_file(uint32_t pos_entry, uint32_t bytes_written_count)
 {
     uint32_t file_size = 0;
     uint32_t pos = pos_entry;
@@ -208,4 +208,55 @@ void update_size_file(uint32_t pos_entry, uint32_t bytes_written_count)
 
     dev.seek(pos);
     dev.write(&file_size, sizeof(file_size));
+}
+
+int write_from_handle(struct file_handle *handle, const void *buffer, uint32_t count)
+{
+    uint32_t bytes_written_count = 0;
+    const uint8_t *bytes = (const uint8_t *)buffer;
+
+    /* If the file is not empty, move position to the end of file */
+    if (handle->cluster != 0)
+    move_to_data_region(handle->cluster, handle->offset);
+
+    /* Write in chunk until count is 0 or no clusters can be allocated */
+    while (count > 0) {
+        uint32_t chunk_length = count;
+        uint32_t bytes_remaining_in_cluster = bpb.sectors_per_cluster * bpb.bytes_per_sector - handle->offset;
+
+        /* Check if we need to allocate a new cluster */
+        if (handle->cluster == 0
+            || bytes_remaining_in_cluster == 0) {
+            uint16_t new_cluster = 0;
+            if (allocate_cluster(&new_cluster, handle->cluster) < 0)
+                return -1;
+
+            /* If the file was empty, update cluster in root directory entry */
+            if (handle->cluster == 0) {
+                dev.seek(handle->pos_entry + CLUSTER_OFFSET_FILE_ENTRY);
+                dev.write(&new_cluster, sizeof(new_cluster));
+            }
+
+            handle->cluster = new_cluster;
+            handle->offset = 0;
+
+            move_to_data_region(new_cluster, 0);
+            bytes_remaining_in_cluster = bpb.sectors_per_cluster * bpb.bytes_per_sector;
+        }
+
+        /* Check that we write within the boundary of the current cluster */
+        if (chunk_length > bytes_remaining_in_cluster)
+            chunk_length = bytes_remaining_in_cluster;
+
+        dev.write(&bytes[bytes_written_count], chunk_length);
+
+        count -= chunk_length;
+        bytes_written_count += chunk_length;
+        handle->offset += chunk_length;
+    }
+
+    /* Update size of file in root directory entry */
+    update_size_file(handle->pos_entry, bytes_written_count);
+
+    return bytes_written_count;
 }

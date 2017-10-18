@@ -322,9 +322,6 @@ int fat16_read(uint8_t handle, void *buffer, uint32_t count)
 
 int fat16_write(uint8_t handle, const void *buffer, uint32_t count)
 {
-    uint32_t bytes_written_count = 0;
-    const uint8_t *bytes = (const uint8_t *)buffer;
-
     if (check_handle(handle) == false) {
         FAT16DBG("FAT16: fat16_write: Invalid handle.\n");
         return -1;
@@ -335,7 +332,7 @@ int fat16_write(uint8_t handle, const void *buffer, uint32_t count)
         return -1;
     }
 
-    if (bytes == NULL) {
+    if (buffer == NULL) {
         FAT16DBG("FAT16: fat16_write: Cannot write using null buffer.\n");
         return -1;
     }
@@ -343,50 +340,7 @@ int fat16_write(uint8_t handle, const void *buffer, uint32_t count)
     if (count == 0)
         return 0;
 
-    /* If the file is not empty, move position to the end of file */
-    if (handles[handle].cluster != 0)
-        move_to_data_region(handles[handle].cluster, handles[handle].offset);
-
-    /* Write in chunk until count is 0 or no clusters can be allocated */
-    while (count > 0) {
-        uint32_t chunk_length = count;
-        uint32_t bytes_remaining_in_cluster = bpb.sectors_per_cluster * bpb.bytes_per_sector - handles[handle].offset;
-
-        /* Check if we need to allocate a new cluster */
-        if (handles[handle].cluster == 0
-            || bytes_remaining_in_cluster == 0) {
-            uint16_t new_cluster = 0;
-            if (allocate_cluster(&new_cluster, handles[handle].cluster) < 0)
-                return -1;
-
-            /* If the file was empty, update cluster in root directory entry */
-            if (handles[handle].cluster == 0) {
-                dev.seek(handles[handle].pos_entry + CLUSTER_OFFSET_FILE_ENTRY);
-                dev.write(&new_cluster, sizeof(new_cluster));
-            }
-
-            handles[handle].cluster = new_cluster;
-            handles[handle].offset = 0;
-
-            move_to_data_region(new_cluster, 0);
-            bytes_remaining_in_cluster = bpb.sectors_per_cluster * bpb.bytes_per_sector;
-        }
-
-        /* Check that we write within the boundary of the current cluster */
-        if (chunk_length > bytes_remaining_in_cluster)
-            chunk_length = bytes_remaining_in_cluster;
-
-        dev.write(&bytes[bytes_written_count], chunk_length);
-
-        count -= chunk_length;
-        bytes_written_count += chunk_length;
-        handles[handle].offset += chunk_length;
-    }
-
-    /* Update size of file in root directory entry */
-    update_size_file(handles[handle].pos_entry, bytes_written_count);
-
-    return bytes_written_count;
+    return write_from_handle(&handles[handle], buffer, count);
 }
 
 int fat16_close(uint8_t handle)
