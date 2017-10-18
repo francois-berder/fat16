@@ -147,6 +147,10 @@ int read_from_handle(struct file_handle *handle, void *buffer, uint32_t count)
     if (handle->remaining_bytes == 0)
         return 0;
 
+    /* Check that cluster is valid */
+    if (handle->cluster == 0)
+        return 0;
+
     move_to_data_region(handle->cluster, handle->offset);
 
     /* Read in chunk until count is 0 or end of file is reached */
