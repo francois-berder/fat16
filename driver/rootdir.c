@@ -126,7 +126,61 @@ int create_file_in_root(char *filename)
 
 int create_directory_in_root(char *dirname)
 {
-    return create_entry_in_root(dirname, SUBDIR);
+    struct dir_entry entry;
+    uint16_t entry_index;
+    uint32_t pos;
+
+    if (create_entry_in_root(dirname, SUBDIR) < 0)
+        return -1;
+
+    if (find_root_directory_entry(&entry_index, dirname) < 0)
+        return -1;
+
+    move_to_root_directory_region(entry_index);
+    dev.read(&entry, sizeof(entry));
+
+    if (allocate_cluster(&entry.starting_cluster, 0) < 0)
+        return -1;
+
+    pos = move_to_root_directory_region(entry_index);
+    pos += CLUSTER_OFFSET_FILE_ENTRY;
+    dev.seek(pos);
+    dev.write(&entry.starting_cluster, sizeof(entry.starting_cluster));
+
+
+    move_to_data_region(entry.starting_cluster, 0);
+    /* Create "." entry */
+    {
+        struct dir_entry e;
+        memset(&e, 0, sizeof(e));
+
+        e.name[0] = '.';
+        memset(&e.name[1], ' ', sizeof(e.name) - 1);
+        e.attribute = SUBDIR;
+        e.starting_cluster = entry.starting_cluster;
+        dev.write(&e, sizeof(e));
+    }
+
+    /* Create ".." entry */
+    {
+        struct dir_entry e;
+        memset(&e, 0, sizeof(e));
+
+        e.name[0] = '.';
+        e.name[1] = '.';
+        memset(&e.name[2], ' ', sizeof(e.name) - 2);
+        e.attribute = SUBDIR;
+        dev.write(&e, sizeof(e));
+    }
+
+    /* Add dummy entry to indicate end of entry list */
+    {
+        struct dir_entry e;
+        memset(&e, 0, sizeof(e));
+        dev.write(&e, sizeof(e));
+    }
+
+    return 0;
 }
 
 static int open_entry_in_root(struct file_handle *handle, char *name, bool read_mode, bool is_file)

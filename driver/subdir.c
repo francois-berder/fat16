@@ -103,10 +103,47 @@ int create_directory_in_subdir(struct file_handle *handle, char *dirname)
     memset(entry.reserved, 0, sizeof(entry.reserved));
     memset(entry.time, 0, sizeof(entry.time));
     memset(entry.date, 0, sizeof(entry.date));
-    entry.starting_cluster = 0;
+    if (allocate_cluster(&entry.starting_cluster, 0) < 0) {
+        return -1;
+    }
     entry.size = 0;
     dev.seek(entry_pos);
     dev.write(&entry, sizeof(entry));
+
+    move_to_data_region(entry.starting_cluster, 0);
+
+    /* Create "."" entry */
+    {
+        struct dir_entry e;
+        memset(&e, 0, sizeof(e));
+
+        e.name[0] = '.';
+        memset(&e.name[1], ' ', sizeof(e.name) - 1);
+        e.starting_cluster = entry.starting_cluster;
+        e.attribute = SUBDIR;
+        dev.write(&e, sizeof(e));
+    }
+
+    /* Create ".."" entry */
+    {
+        struct dir_entry e;
+        memset(&e, 0, sizeof(e));
+
+        e.name[0] = '.';
+        e.name[1] = '.';
+        memset(&e.name[2], ' ', sizeof(e.name) - 2);
+        e.starting_cluster = starting_cluster;
+        e.attribute = SUBDIR;
+
+        dev.write(&e, sizeof(e));
+    }
+
+    /* Add dummy entry to indicate end of entry list */
+    {
+        struct dir_entry e;
+        memset(&e, 0, sizeof(e));
+        dev.write(&e, sizeof(e));
+    }
 
     return 0;
 }
