@@ -14,7 +14,9 @@ Test("ReadEmptyFileTest")
 void ReadEmptyFileTest::init()
 {
     restore_image();
-    create_empty_file("HELLO.TXT");
+    mount_image();
+    system("touch /mnt/HELLO.TXT");
+    unmount_image();
     load_image();
 }
 
@@ -36,16 +38,4 @@ bool ReadEmptyFileTest::run()
         return false;
 
     return true;
-}
-
-void ReadEmptyFileTest::create_empty_file(const std::string &filename)
-{
-    mount_image();
-
-    std::string path = "/mnt/";
-    path += filename;
-    std::ofstream file(path);
-    file.close();
-
-    unmount_image();
 }

@@ -10,10 +10,6 @@ class ReadEmptyFileTest : public Test
 
         virtual void init() override;
         virtual bool run() override;
-
-    private :
-
-        void create_empty_file(const std::string &filename);
 };
 
 #endif
