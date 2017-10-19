@@ -14,7 +14,7 @@ class WriteEraseContentTest : public Test
 
     private :
 
-        bool check_file_is_empty();
+        bool check_file_is_empty(const std::string &filepath);
 };
 
 #endif
