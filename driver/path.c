@@ -117,3 +117,11 @@ int get_subdir(char *subdir_name, uint16_t *index, const char *path)
     *index = beg + len;
     return 0;
 }
+
+bool is_in_root(const char *path)
+{
+    char subdir_name[13];
+    uint16_t index = 0;
+
+    return get_subdir(subdir_name, &index, path) < 0;
+}

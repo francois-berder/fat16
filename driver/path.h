@@ -26,4 +26,6 @@ int to_short_filename(char *short_filename, const char *long_filename);
  */
 int get_subdir(char *subdir_name, uint16_t *index, const char *path);
 
+bool is_in_root(const char *path);
+
 #endif
