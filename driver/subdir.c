@@ -82,6 +82,25 @@ static int find_available_entry_in_subdir(uint32_t *entry_pos, struct file_handl
     return ret;
 }
 
+static bool last_entry_in_subdir(uint32_t entry_pos)
+{
+    uint8_t tmp;
+    dev.seek(entry_pos + sizeof(struct dir_entry));
+    dev.read(&tmp, sizeof(tmp));
+    return tmp == 0;
+}
+
+static void mark_entry_as_available(uint32_t entry_pos)
+{
+    uint8_t entry_marker = 0;
+
+    if (!last_entry_in_subdir(entry_pos))
+        entry_marker = ROOT_DIR_AVAILABLE_ENTRY;
+
+    dev.seek(entry_pos);
+    dev.write(&entry_marker, sizeof(entry_marker));
+}
+
 int create_file_in_subdir(struct file_handle *handle, char *filename)
 {
     struct dir_entry entry;
@@ -208,4 +227,25 @@ int open_file_in_subdir(struct file_handle *handle, char *filename, bool read_mo
 int open_directory_in_subdir(struct file_handle *handle, char *dirname)
 {
     return open_entry_in_subdir(handle, dirname, true, false);
+}
+
+int delete_file_in_subdir(struct file_handle *handle, char *filename)
+{
+    struct dir_entry entry;
+    uint32_t entry_pos;
+
+    /* Find the entry in the directory */
+    if (find_entry_in_subdir(handle, &entry, &entry_pos, filename) < 0)
+        return -1;
+
+    /* Check that the entry is a file */
+    if (entry.attribute & VOLUME
+    ||  entry.attribute & SUBDIR
+    ||  entry.attribute & SYSTEM)
+        return -1;
+
+    mark_entry_as_available(entry_pos);
+    free_cluster_chain(entry.starting_cluster);
+
+    return 0;
 }

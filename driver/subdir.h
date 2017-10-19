@@ -49,4 +49,13 @@ int open_file_in_subdir(struct file_handle *handle, char *filename, bool read_mo
  */
 int open_directory_in_subdir(struct file_handle *handle, char *dirname);
 
+/**
+ * @brief Delete a file in a subdirectory
+ *
+ * @param[in] handle
+ * @param[in] filename
+ * @return 0 if successful, -1 otherwise
+ */
+int delete_file_in_subdir(struct file_handle *handle, char *filename);
+
 #endif
