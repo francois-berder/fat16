@@ -165,67 +165,6 @@ static uint8_t find_available_handle(void)
     return INVALID_HANDLE;
 }
 
-/**
- * @brief Create a handle for reading a file.
- *
- * @param[in] handle Index to an available handle
- * @param[in] filename Name of the file in 8.3 format
- * @return handle if successful, -1 otherwise
- */
-static int fat16_open_read(uint8_t handle, char *filename)
-{
-    /* Check that it is not opened for writing operations. */
-    if (is_file_opened(filename, WRITE_MODE)) {
-        FAT16DBG("FAT16: Cannot read from file while writing to it.\n");
-        return -1;
-    }
-
-    if (open_file_in_root(&handles[handle], filename, READ_MODE) < 0)
-        return -1;
-
-    return handle;
-}
-
-/**
- * @brief Create a handle and an entry in the FAT.
- *
- * @param[in] handle Index to an available handle
- * @param[in] filename Name of the file in 8.3 format
- * @return handle if successful, -1 otherwise
- */
-static int fat16_open_write(uint8_t handle, char *filename)
-{
-    /* Check that it is not opened for reading operations. */
-    if (is_file_opened(filename, READ_MODE)) {
-        FAT16DBG("FAT16: Cannot write to file while reading from it.\n");
-        return -1;
-    }
-
-    /*
-     * Check that it is not opened for writing operations.
-     * For simplicity, a file can be written by only one
-     * handle.
-     */
-    if (is_file_opened(filename, WRITE_MODE)) {
-        FAT16DBG("FAT16: Cannot write to file already opened in write mode.\n");
-        return -1;
-    }
-
-    /*
-     * Discard any previous content.
-     * Do not check return value because the file may not exist.
-     */
-    delete_file_in_root(filename);
-
-    if (create_file_in_root(filename) < 0)
-        return -1;
-
-    if (open_file_in_root(&handles[handle], filename, WRITE_MODE) < 0)
-        return -1;
-
-    return handle;
-}
-
 /** @return True if handle is valid, false otherwise */
 static bool check_handle(uint8_t handle)
 {
@@ -275,17 +214,19 @@ int fat16_init(struct storage_dev_t _dev)
     return 0;
 }
 
-int fat16_open(const char *filename, char mode)
+int fat16_open(const char *filepath, char mode)
 {
-    char fat_filename[11];
+    int i;
+    char filename[11];
     uint8_t handle = INVALID_HANDLE;
+    uint8_t read_mode;
 
     if (mode != 'r' && mode != 'w') {
         FAT16DBG("FAT16: Invalid mode.\n");
         return -1;
     }
 
-    if (filename == NULL) {
+    if (filepath == NULL) {
         FAT16DBG("FAT16: Cannot open a file with a null path string.\n");
         return -1;
     }
@@ -296,15 +237,73 @@ int fat16_open(const char *filename, char mode)
         return -1;
     }
 
-    if (to_short_filename(fat_filename, filename) < 0)
-        return -1;
+    read_mode = mode == 'r' ? READ_MODE : WRITE_MODE;
+    if (is_in_root(filepath)) {
+        if (to_short_filename(filename, filepath) < 0)
+            return -1;
 
-    if (mode == 'r')
-        return fat16_open_read(handle, fat_filename);
-    else
-        return fat16_open_write(handle, fat_filename);
+        if (read_mode == WRITE_MODE) {
+            /* Delete existing file */
+            if (!open_file_in_root(&handles[handle], filename, read_mode)) {
+                if (delete_file_in_root(filename) < 0)
+                    return -1;
+            }
+
+            if (create_file_in_root(filename) < 0)
+                return -1;
+        }
+
+        if (open_file_in_root(&handles[handle], filename, read_mode) < 0) {
+            handles[handle].filename[0] = 0;
+            return -1;
+        }
+    } else {
+        struct file_handle dir_handle;
+        if (navigate_to_subdir(&dir_handle, filename, filepath) < 0)
+            return -1;
+
+        if (read_mode == WRITE_MODE) {
+            /* Delete existing file */
+            if (!open_file_in_subdir(&dir_handle, filename, read_mode)) {
+                if (delete_file_in_subdir(&dir_handle, filename) < 0)
+                    return -1;
+            }
+
+            if (create_file_in_subdir(&dir_handle, filename) < 0)
+                return -1;
+        }
+
+        if (open_file_in_subdir(&dir_handle, filename, read_mode) < 0) {
+            return -1;
+        }
+
+        handles[handle] = dir_handle;
+    }
+
+    /*
+     * To avoid bugs, we restrict opening the same file several times.
+     * If a file is opened in write mode, this file cannot be opened anymore.
+     * If a file is opened in read mode, this file cannot be opened later in write
+     * mode. Hence, a file cannot be opened several times in read mode.
+     */
+    for (i = 0; i < HANDLE_COUNT; ++i) {
+        if (handles[i].filename[0] == 0)
+            continue;
+
+        if (i == handle)
+            continue;
+
+        if (handles[handle].pos_entry == handles[i].pos_entry) {
+            if ((read_mode == READ_MODE && handles[i].read_mode != READ_MODE)
+            ||  read_mode != READ_MODE) {
+                handles[handle].filename[0] = 0;
+                return -1;
+            }
+        }
+    }
+
+    return handle;
 }
-
 
 int fat16_read(uint8_t handle, void *buffer, uint32_t count)
 {

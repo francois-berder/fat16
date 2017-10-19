@@ -39,20 +39,18 @@ int fat16_init(struct storage_dev_t dev);
 /**
  * @brief Open a file.
  *
- * No sub directories are supported, so the path is the name of the file.
- *
  * A file can be opened multiple times for reading. But, it can be opened only
  * once at a time for writing.
  *
  * If a file opened in write mode does not exist, it is created. On the other
  * hand, if it exists, the content will be deleted first.
  *
- * @param[in] filename
+ * @param[in] filepath
  * @param[in] mode Can be 'r' or 'w'
  * @return A handle of the file (positive integer) if it could open it.
  * Otherwise, a negative value is returned.
  */
-int fat16_open(const char *filename, char mode);
+int fat16_open(const char *filepath, char mode);
 
 /**
  * @brief Read data from file.
