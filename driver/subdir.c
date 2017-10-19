@@ -57,37 +57,6 @@ static int find_available_entry_in_subdir(uint32_t *entry_pos, struct file_handl
     return 0;
 }
 
-int create_file_in_subdir(struct file_handle *handle, char *filename)
-{
-    struct dir_entry entry;
-    uint32_t starting_cluster = handle->cluster;
-    uint32_t entry_pos;
-
-    /* Do not allow muliple entries with same name */
-    if (find_entry_in_subdir(handle, &entry, filename) == 0)
-        return -1;
-
-    /* Move back to beginning of entry list */
-    handle->cluster = starting_cluster;
-    handle->offset = 0;
-
-    /* Try to find an available entry in the current entry list */
-    if (find_available_entry_in_subdir(&entry_pos, handle) < 0)
-        return -1;
-
-    memcpy(entry.name, filename, sizeof(entry.name));
-    entry.attribute = 0;
-    memset(entry.reserved, 0, sizeof(entry.reserved));
-    memset(entry.time, 0, sizeof(entry.time));
-    memset(entry.date, 0, sizeof(entry.date));
-    entry.starting_cluster = 0;
-    entry.size = 0;
-    dev.seek(entry_pos);
-    dev.write(&entry, sizeof(entry));
-
-    return 0;
-}
-
 int open_file_in_subdir(struct file_handle *handle, char *filename, bool read_mode)
 {
     struct dir_entry entry;
@@ -133,6 +102,37 @@ int open_directory_in_subdir(struct file_handle *handle, char *dirname)
     handle->cluster = entry.starting_cluster;
     handle->offset = 0;
     handle->remaining_bytes = entry.size;
+
+    return 0;
+}
+
+int create_file_in_subdir(struct file_handle *handle, char *filename)
+{
+    struct dir_entry entry;
+    uint32_t starting_cluster = handle->cluster;
+    uint32_t entry_pos;
+
+    /* Do not allow muliple entries with same name */
+    if (find_entry_in_subdir(handle, &entry, filename) == 0)
+        return -1;
+
+    /* Move back to beginning of entry list */
+    handle->cluster = starting_cluster;
+    handle->offset = 0;
+
+    /* Try to find an available entry in the current entry list */
+    if (find_available_entry_in_subdir(&entry_pos, handle) < 0)
+        return -1;
+
+    memcpy(entry.name, filename, sizeof(entry.name));
+    entry.attribute = 0;
+    memset(entry.reserved, 0, sizeof(entry.reserved));
+    memset(entry.time, 0, sizeof(entry.time));
+    memset(entry.date, 0, sizeof(entry.date));
+    entry.starting_cluster = 0;
+    entry.size = 0;
+    dev.seek(entry_pos);
+    dev.write(&entry, sizeof(entry));
 
     return 0;
 }
