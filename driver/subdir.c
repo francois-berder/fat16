@@ -7,7 +7,7 @@ extern struct storage_dev_t dev;
 extern struct fat16_layout layout;
 extern struct fat16_bpb bpb;
 
-static int find_entry_in_subdir(struct file_handle *handle, struct dir_entry *entry, char *name)
+static int find_entry_in_subdir(struct file_handle *handle, struct dir_entry *entry, uint32_t *entry_pos, char *name)
 {
     int ret = -1;
     uint32_t starting_cluster = handle->cluster;
@@ -29,6 +29,11 @@ static int find_entry_in_subdir(struct file_handle *handle, struct dir_entry *en
             ret = 0;
             break;
         }
+    }
+
+    if (entry_pos != NULL) {
+        *entry_pos = move_to_data_region(handle->cluster, handle->offset);
+        *entry_pos -= sizeof(struct dir_entry);
     }
 
     /* Restore state of handle */
@@ -83,7 +88,7 @@ int create_file_in_subdir(struct file_handle *handle, char *filename)
     uint32_t entry_pos;
 
     /* Do not allow muliple entries with same name */
-    if (find_entry_in_subdir(handle, &entry, filename) == 0)
+    if (find_entry_in_subdir(handle, &entry, NULL, filename) == 0)
         return -1;
 
     /* Try to find an available entry in the current entry list */
@@ -110,7 +115,7 @@ int create_directory_in_subdir(struct file_handle *handle, char *dirname)
     uint32_t parent_dir_starting_cluster = handle->cluster;
 
     /* Do not allow muliple entries with same name */
-    if (find_entry_in_subdir(handle, &entry, dirname) == 0)
+    if (find_entry_in_subdir(handle, &entry, NULL, dirname) == 0)
         return -1;
 
     /* Try to find an available entry in the current entry list */
@@ -170,8 +175,9 @@ int create_directory_in_subdir(struct file_handle *handle, char *dirname)
 static int open_entry_in_subdir(struct file_handle *handle, char *name, bool read_mode, bool is_file)
 {
     struct dir_entry entry;
+    uint32_t entry_pos;
 
-    if (find_entry_in_subdir(handle, &entry, name) < 0)
+    if (find_entry_in_subdir(handle, &entry, &entry_pos, name) < 0)
         return -1;
 
     /* Check that we are opening a file or directory and not something else */
@@ -186,7 +192,7 @@ static int open_entry_in_subdir(struct file_handle *handle, char *name, bool rea
 
     memcpy(handle->filename, name, sizeof(handle->filename));
     handle->read_mode = read_mode;
-    handle->pos_entry = move_to_data_region(handle->cluster, handle->offset);
+    handle->pos_entry = entry_pos;
     handle->cluster = entry.starting_cluster;
     handle->offset = 0;
     handle->remaining_bytes = entry.size;
