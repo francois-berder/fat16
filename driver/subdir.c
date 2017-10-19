@@ -9,6 +9,9 @@ extern struct fat16_bpb bpb;
 
 static int find_entry_in_subdir(struct file_handle *handle, struct dir_entry *entry, char *name)
 {
+    int ret = -1;
+    uint32_t starting_cluster = handle->cluster;
+
     while (read_from_handle(handle, entry, sizeof(struct dir_entry)) > 0) {
         /* Skip available entry */
         if ((uint8_t)(entry->name[0]) == ROOT_DIR_AVAILABLE_ENTRY)
@@ -23,16 +26,23 @@ static int find_entry_in_subdir(struct file_handle *handle, struct dir_entry *en
             continue;
 
         if (memcmp(name, entry->name, sizeof(entry->name)) == 0) {
-            return 0;
+            ret = 0;
+            break;
         }
     }
 
-    return -1;
+    /* Restore state of handle */
+    handle->cluster = starting_cluster;
+    handle->offset = 0;
+
+    return ret;
 }
 
 static int find_available_entry_in_subdir(uint32_t *entry_pos, struct file_handle *handle)
 {
+    int ret = -1;
     struct dir_entry entry;
+    uint32_t starting_cluster = handle->cluster;
 
     /* Check if there is some space in the entry list */
     while (read_from_handle(handle, &entry, sizeof(entry)) == sizeof(entry)) {
@@ -40,7 +50,8 @@ static int find_available_entry_in_subdir(uint32_t *entry_pos, struct file_handl
         if (tmp == 0 || tmp == ROOT_DIR_AVAILABLE_ENTRY) {
             *entry_pos = move_to_data_region(handle->cluster, handle->offset);
             *entry_pos -= sizeof(entry);
-            return 0;
+            ret = 0;
+            break;
         }
     }
 
@@ -48,13 +59,22 @@ static int find_available_entry_in_subdir(uint32_t *entry_pos, struct file_handl
      * If there is no space in the entry list, append a dummy entry to the
      * entry list.
      */
-    memset(&entry, 0, sizeof(entry));
-    if (write_from_handle(handle, &entry, sizeof(entry)) != sizeof(entry))
-        return -1;
+    if (ret < 0) {
+        memset(&entry, 0, sizeof(entry));
+        if (write_from_handle(handle, &entry, sizeof(entry)) == sizeof(entry))
+            ret = 0;
+    }
 
-    *entry_pos = move_to_data_region(handle->cluster, handle->offset);
-    *entry_pos -= sizeof(entry);
-    return 0;
+    if (ret == 0) {
+        *entry_pos = move_to_data_region(handle->cluster, handle->offset);
+        *entry_pos -= sizeof(entry);
+    }
+
+    /* Restore previous state of handle */
+    handle->cluster = starting_cluster;
+    handle->offset = 0;
+
+    return ret;
 }
 
 int open_file_in_subdir(struct file_handle *handle, char *filename, bool read_mode)
@@ -109,16 +129,11 @@ int open_directory_in_subdir(struct file_handle *handle, char *dirname)
 int create_file_in_subdir(struct file_handle *handle, char *filename)
 {
     struct dir_entry entry;
-    uint32_t starting_cluster = handle->cluster;
     uint32_t entry_pos;
 
     /* Do not allow muliple entries with same name */
     if (find_entry_in_subdir(handle, &entry, filename) == 0)
         return -1;
-
-    /* Move back to beginning of entry list */
-    handle->cluster = starting_cluster;
-    handle->offset = 0;
 
     /* Try to find an available entry in the current entry list */
     if (find_available_entry_in_subdir(&entry_pos, handle) < 0)
@@ -140,16 +155,12 @@ int create_file_in_subdir(struct file_handle *handle, char *filename)
 int create_directory_in_subdir(struct file_handle *handle, char *dirname)
 {
     struct dir_entry entry;
-    uint32_t starting_cluster = handle->cluster;
     uint32_t entry_pos;
+    uint32_t parent_dir_starting_cluster = handle->cluster;
 
     /* Do not allow muliple entries with same name */
     if (find_entry_in_subdir(handle, &entry, dirname) == 0)
         return -1;
-
-    /* Move back to beginning of entry list */
-    handle->cluster = starting_cluster;
-    handle->offset = 0;
 
     /* Try to find an available entry in the current entry list */
     if (find_available_entry_in_subdir(&entry_pos, handle) < 0)
@@ -189,7 +200,7 @@ int create_directory_in_subdir(struct file_handle *handle, char *dirname)
         e.name[0] = '.';
         e.name[1] = '.';
         memset(&e.name[2], ' ', sizeof(e.name) - 2);
-        e.starting_cluster = starting_cluster;
+        e.starting_cluster = parent_dir_starting_cluster;
         e.attribute = SUBDIR;
 
         dev.write(&e, sizeof(e));
