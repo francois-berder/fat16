@@ -57,6 +57,32 @@ static int find_available_entry_in_subdir(uint32_t *entry_pos, struct file_handl
     return 0;
 }
 
+int open_file_in_subdir(struct file_handle *handle, char *filename, bool read_mode)
+{
+    struct dir_entry entry;
+
+    if (find_entry_in_subdir(handle, &entry, filename) < 0)
+        return -1;
+
+    /* Check that we are opening a file and not something else */
+    if (entry.attribute & VOLUME
+    ||  entry.attribute & SYSTEM
+    ||  entry.attribute & SUBDIR)
+        return -1;
+
+    if ((entry.attribute & READ_ONLY) && read_mode != READ_MODE)
+        return -1;
+
+    memcpy(handle->filename, filename, sizeof(handle->filename));
+    handle->read_mode = read_mode;
+    handle->pos_entry = move_to_data_region(handle->cluster, handle->offset);
+    handle->cluster = entry.starting_cluster;
+    handle->offset = 0;
+    handle->remaining_bytes = entry.size;
+
+    return 0;
+}
+
 int open_directory_in_subdir(struct file_handle *handle, char *dirname)
 {
     struct dir_entry entry;
