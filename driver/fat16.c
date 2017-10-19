@@ -446,36 +446,19 @@ int fat16_ls(uint16_t *index, char *filename)
 
 int fat16_mkdir(const char *dirpath)
 {
-    int ret;
-    uint16_t index = 0;
-    char subdir_name[13];
     char dirname[11];
-    struct file_handle handle;
 
-    ret = get_subdir(subdir_name, &index, dirpath);
-    if (ret < 0) {
+    if (is_in_root(dirpath)) {
         if (to_short_filename(dirname, dirpath) < 0)
             return -1;
 
         return create_directory_in_root(dirname);
-    }
+    } else {
+        struct file_handle handle;
 
-    if (to_short_filename(dirname, subdir_name) < 0)
-        return -1;
-
-    if (open_directory_in_root(&handle, dirname) < 0)
-        return -1;
-
-    while (1) {
-        ret = get_subdir(subdir_name, &index, dirpath);
-        if (to_short_filename(dirname, &dirpath[index]) < 0)
+        if (navigate_to_subdir(&handle, dirname, dirpath) < 0)
             return -1;
 
-        if (ret < 0)
-            return create_directory_in_subdir(&handle, dirname);
-
-        open_directory_in_subdir(&handle, dirname);
+        return create_directory_in_subdir(&handle, dirname);
     }
-
-    return 0;
 }
