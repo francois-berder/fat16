@@ -16,6 +16,8 @@ void ReadEmptyFileTest::init()
     restore_image();
     mount_image();
     system("touch /mnt/HELLO.TXT");
+    system("mkdir /mnt/TMP");
+    system("touch /mnt/TMP/HELLO.TXT");
     unmount_image();
     load_image();
 }
@@ -30,8 +32,17 @@ bool ReadEmptyFileTest::run()
         return false;
 
     char buf;
-    int ret = fat16_read(fd, &buf, 1);
-    if (ret != 0)
+    if (fat16_read(fd, &buf, 1) != 0)
+        return false;
+
+    if (fat16_close(fd) < 0)
+        return false;
+
+    fd = fat16_open("/TMP/HELLO.TXT", 'r');
+    if (fd < 0)
+        return false;
+
+    if (fat16_read(fd, &buf, 1) != 0)
         return false;
 
     if (fat16_close(fd) < 0)
