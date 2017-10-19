@@ -140,4 +140,14 @@ int read_from_handle(struct file_handle *handle, void *buffer, uint32_t count);
  */
 int write_from_handle(struct file_handle *handle, const void *buffer, uint32_t count);
 
+/**
+ * @brief Navigate to subdirectory
+ *
+ * @param[out] handle
+ * @param[out] entry_name 8.3 short name
+ * @param[in] path
+ * @return 0 if succesful, -1 otherwise
+ */
+int navigate_to_subdir(struct file_handle *handle, char *entry_name, const char *path);
+
 #endif

@@ -2,6 +2,9 @@
 #include "debug.h"
 #include "fat16.h"
 #include "fat16_priv.h"
+#include "path.h"
+#include "rootdir.h"
+#include "subdir.h"
 
 extern struct storage_dev_t dev;
 extern struct fat16_layout layout;
@@ -259,4 +262,35 @@ int write_from_handle(struct file_handle *handle, const void *buffer, uint32_t c
     update_size_file(handle->pos_entry, bytes_written_count);
 
     return bytes_written_count;
+}
+
+int navigate_to_subdir(struct file_handle *handle, char *entry_name, const char *path)
+{
+    int ret;
+    char subdir_name[13];
+    uint16_t index = 0;
+
+    ret = get_subdir(subdir_name, &index, path);
+    if (ret < 0) {
+        return -1;
+    }
+
+    if (to_short_filename(entry_name, subdir_name) < 0)
+        return -1;
+
+    if (open_directory_in_root(handle, entry_name) < 0)
+        return -1;
+
+    while (1) {
+        ret = get_subdir(subdir_name, &index, path);
+        if (to_short_filename(entry_name, &path[index]) < 0)
+            return -1;
+
+        if (ret < 0)
+            break;
+
+        open_directory_in_subdir(handle, entry_name);
+    }
+
+    return 0;
 }
