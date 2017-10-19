@@ -77,43 +77,6 @@ static int find_available_entry_in_subdir(uint32_t *entry_pos, struct file_handl
     return ret;
 }
 
-static int open_entry_in_subdir(struct file_handle *handle, char *name, bool read_mode, bool is_file)
-{
-    struct dir_entry entry;
-
-    if (find_entry_in_subdir(handle, &entry, name) < 0)
-        return -1;
-
-    /* Check that we are opening a file or directory and not something else */
-    if (entry.attribute & VOLUME || entry.attribute & SYSTEM)
-        return -1;
-
-    if (is_file && entry.attribute & SUBDIR)
-        return -1;
-
-    if ((entry.attribute & READ_ONLY) && read_mode != READ_MODE)
-        return -1;
-
-    memcpy(handle->filename, name, sizeof(handle->filename));
-    handle->read_mode = read_mode;
-    handle->pos_entry = move_to_data_region(handle->cluster, handle->offset);
-    handle->cluster = entry.starting_cluster;
-    handle->offset = 0;
-    handle->remaining_bytes = entry.size;
-
-    return 0;
-}
-
-int open_file_in_subdir(struct file_handle *handle, char *filename, bool read_mode)
-{
-    return open_entry_in_subdir(handle, filename, read_mode, true);
-}
-
-int open_directory_in_subdir(struct file_handle *handle, char *dirname)
-{
-    return open_entry_in_subdir(handle, dirname, true, false);
-}
-
 int create_file_in_subdir(struct file_handle *handle, char *filename)
 {
     struct dir_entry entry;
@@ -202,4 +165,41 @@ int create_directory_in_subdir(struct file_handle *handle, char *dirname)
     }
 
     return 0;
+}
+
+static int open_entry_in_subdir(struct file_handle *handle, char *name, bool read_mode, bool is_file)
+{
+    struct dir_entry entry;
+
+    if (find_entry_in_subdir(handle, &entry, name) < 0)
+        return -1;
+
+    /* Check that we are opening a file or directory and not something else */
+    if (entry.attribute & VOLUME || entry.attribute & SYSTEM)
+        return -1;
+
+    if (is_file && entry.attribute & SUBDIR)
+        return -1;
+
+    if ((entry.attribute & READ_ONLY) && read_mode != READ_MODE)
+        return -1;
+
+    memcpy(handle->filename, name, sizeof(handle->filename));
+    handle->read_mode = read_mode;
+    handle->pos_entry = move_to_data_region(handle->cluster, handle->offset);
+    handle->cluster = entry.starting_cluster;
+    handle->offset = 0;
+    handle->remaining_bytes = entry.size;
+
+    return 0;
+}
+
+int open_file_in_subdir(struct file_handle *handle, char *filename, bool read_mode)
+{
+    return open_entry_in_subdir(handle, filename, read_mode, true);
+}
+
+int open_directory_in_subdir(struct file_handle *handle, char *dirname)
+{
+    return open_entry_in_subdir(handle, dirname, true, false);
 }
