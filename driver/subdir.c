@@ -10,16 +10,20 @@ extern struct fat16_bpb bpb;
 static int find_entry_in_subdir(struct file_handle *handle, struct dir_entry *entry, uint32_t *entry_pos, char *name)
 {
     int ret = -1;
-    uint32_t starting_cluster = handle->cluster;
+    uint32_t current_cluster = handle->cluster;
+    uint32_t bytes_remaining_in_cluster = bpb.sectors_per_cluster * bpb.bytes_per_sector;
 
-    while (read_from_handle(handle, entry, sizeof(struct dir_entry)) > 0) {
+    move_to_data_region(current_cluster, 0);
+    while (1) {
+        dev.read(entry, sizeof(struct dir_entry));
+
         /* Skip available entry */
         if ((uint8_t)(entry->name[0]) == ROOT_DIR_AVAILABLE_ENTRY)
-        continue;
-
-        /* Do not allow filename to start with a NULL character */
-        if (entry->name[0] == 0)
             continue;
+
+        /* Check if we reached end of entry list */
+        if (entry->name[0] == 0)
+            break;
 
         /* Ignore any VFAT entry */
         if ((entry->attribute & ROOT_DIR_VFAT_ENTRY) == ROOT_DIR_VFAT_ENTRY)
@@ -29,16 +33,31 @@ static int find_entry_in_subdir(struct file_handle *handle, struct dir_entry *en
             ret = 0;
             break;
         }
+
+        bytes_remaining_in_cluster -= sizeof(struct dir_entry);
+
+        /*
+         * Check if we reach end of cluster.
+         * We assume that cluster size is a multiple of dir_entry size
+         */
+        if (bytes_remaining_in_cluster == 0) {
+            uint16_t next_cluster;
+            get_next_cluster(&next_cluster, current_cluster);
+            if (next_cluster >= 0xFFF8)
+                break;
+
+            move_to_data_region(next_cluster, 0);
+            current_cluster = next_cluster;
+            bytes_remaining_in_cluster = bpb.sectors_per_cluster * bpb.bytes_per_sector;
+        }
     }
 
-    if (entry_pos != NULL) {
-        *entry_pos = move_to_data_region(handle->cluster, handle->offset);
+    if (ret == 0 && entry_pos != NULL) {
+        uint32_t offset = bpb.sectors_per_cluster * bpb.bytes_per_sector;
+        offset -= bytes_remaining_in_cluster;
+        *entry_pos = move_to_data_region(current_cluster, offset);
         *entry_pos -= sizeof(struct dir_entry);
     }
-
-    /* Restore state of handle */
-    handle->cluster = starting_cluster;
-    handle->offset = 0;
 
     return ret;
 }
