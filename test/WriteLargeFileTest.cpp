@@ -12,27 +12,61 @@ m_bytes_count(bytes_count)
 
 }
 
+void WriteLargeFileTest::init()
+{
+    restore_image();
+    mount_image();
+    system("mkdir /mnt/TMP");
+    unmount_image();
+    load_image();
+}
+
 bool WriteLargeFileTest::run()
 {
     if (fat16_init(linux_dev) < 0)
         return false;
 
-    int fd = fat16_open("HELLO.TXT", 'w');
-    if (fd < 0)
-        return false;
+    {
+        int fd = fat16_open("HELLO.TXT", 'w');
+        if (fd < 0)
+            return false;
 
-    srand(1);
-    for (unsigned int i = 0; i < m_bytes_count; ++i) {
-        char buf = rand();
-        int ret = fat16_write(fd, &buf, sizeof(buf));
-        if (ret != 1)
+        srand(1);
+        for (unsigned int i = 0; i < m_bytes_count; ++i) {
+            char buf = rand();
+            int ret = fat16_write(fd, &buf, sizeof(buf));
+            if (ret != 1)
+                return false;
+        }
+
+        if (fat16_close(fd) < 0)
+            return false;
+
+        if (!check_content_file("HELLO.TXT"))
             return false;
     }
 
-    if (fat16_close(fd) < 0)
-        return false;
+    {
+        int fd = fat16_open("/TMP/HELLO.TXT", 'w');
+        if (fd < 0)
+            return false;
 
-    return check_content_file("HELLO.TXT");
+        srand(1);
+        for (unsigned int i = 0; i < m_bytes_count; ++i) {
+            char buf = rand();
+            int ret = fat16_write(fd, &buf, sizeof(buf));
+            if (ret != 1)
+                return false;
+        }
+
+        if (fat16_close(fd) < 0)
+            return false;
+
+        if (!check_content_file("/TMP/HELLO.TXT"))
+            return false;
+    }
+
+    return true;
 }
 
 bool WriteLargeFileTest::check_content_file(const std::string &filename)
