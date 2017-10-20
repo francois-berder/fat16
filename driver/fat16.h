@@ -89,12 +89,11 @@ int fat16_close(uint8_t handle);
  * @brief Delete a file.
  *
  * The file must not be opened for reading or writing.
- * No sub directories are supported, so the path is the name of the file.
  *
- * @param[in] filename
+ * @param[in] filepath
  * @return 0 if successful, -1 otherwise
  */
-int fat16_delete(const char *filename);
+int fat16_delete(const char *filepath);
 
 /**
  * @brief Gives the name of a file in the root directory.

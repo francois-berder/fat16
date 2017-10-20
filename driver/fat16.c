@@ -138,22 +138,6 @@ static int fat16_read_bpb(void)
     return 0;
 }
 
-static bool is_file_opened(char *filename, bool mode)
-{
-    uint8_t i = 0;
-
-    for (; i < HANDLE_COUNT; ++i) {
-        if (handles[i].filename[0] == 0)
-            continue;
-
-        if (memcmp(filename, handles[i].filename, sizeof(handles[i].filename)) == 0)
-            if (handles[i].read_mode == mode)
-                return true;
-    }
-
-    return false;
-}
-
 static uint8_t find_available_handle(void)
 {
     uint8_t i = 0;
@@ -354,25 +338,31 @@ int fat16_close(uint8_t handle)
     return 0;
 }
 
-int fat16_delete(const char *filename)
+int fat16_delete(const char *filepath)
 {
-    char fat_filename[11];
+    char filename[11];
 
-    if (filename == NULL) {
+    if (filepath == NULL) {
         FAT16DBG("FAT16: Cannot open a file with a null path string.\n");
         return -1;
     }
 
-    if (to_short_filename(fat_filename, filename) < 0)
-        return -1;
+    if (is_in_root(filepath)) {
+        if (to_short_filename(filename, filepath) < 0)
+            return -1;
 
-    if (is_file_opened(fat_filename, READ_MODE)
-        || is_file_opened(fat_filename, WRITE_MODE)) {
-        FAT16DBG("FAT16: Cannot delete a file currently opened.\n");
-        return -1;
+        if (delete_file_in_root(filename) < 0)
+            return -1;
+    } else {
+        struct file_handle dir_handle;
+        if (navigate_to_subdir(&dir_handle, filename, filepath) < 0)
+            return -1;
+
+        if (delete_file_in_subdir(&dir_handle, filename) < 0)
+            return -1;
     }
 
-    return delete_file_in_root(fat_filename);
+    return 0;
 }
 
 int fat16_ls(uint16_t *index, char *filename)
