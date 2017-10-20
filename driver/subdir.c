@@ -7,7 +7,16 @@ extern struct storage_dev_t dev;
 extern struct fat16_layout layout;
 extern struct fat16_bpb bpb;
 
-static int find_entry_in_subdir(struct file_handle *handle, struct dir_entry *entry, uint32_t *entry_pos, char *name)
+/**
+ * @brief Find an entry in the subdirectory
+ *
+ * @param[out] entry
+ * @param[out] entry_pos Absolute position of the entry
+ * @param[in] handle Directory handle
+ * @param[in] name 8.3 short name
+ * @return 0 if an entry with this name has been found, -1 otherwise
+ */
+static int find_entry_in_subdir(struct dir_entry *entry, uint32_t *entry_pos, struct file_handle *handle, char *name)
 {
     int ret = -1;
     uint32_t current_cluster = handle->cluster;
@@ -126,7 +135,7 @@ int create_file_in_subdir(struct file_handle *handle, char *filename)
     uint32_t entry_pos;
 
     /* Do not allow muliple entries with same name */
-    if (find_entry_in_subdir(handle, &entry, NULL, filename) == 0)
+    if (find_entry_in_subdir(&entry, NULL, handle, filename) == 0)
         return -1;
 
     /* Try to find an available entry in the current entry list */
@@ -153,7 +162,7 @@ int create_directory_in_subdir(struct file_handle *handle, char *dirname)
     uint32_t parent_dir_starting_cluster = handle->cluster;
 
     /* Do not allow muliple entries with same name */
-    if (find_entry_in_subdir(handle, &entry, NULL, dirname) == 0)
+    if (find_entry_in_subdir(&entry, NULL, handle, dirname) == 0)
         return -1;
 
     /* Try to find an available entry in the current entry list */
@@ -215,7 +224,7 @@ static int open_entry_in_subdir(struct file_handle *handle, char *name, bool rea
     struct dir_entry entry;
     uint32_t entry_pos;
 
-    if (find_entry_in_subdir(handle, &entry, &entry_pos, name) < 0)
+    if (find_entry_in_subdir(&entry, &entry_pos, handle, name) < 0)
         return -1;
 
     /* Check that we are opening a file or directory and not something else */
@@ -254,7 +263,7 @@ int delete_file_in_subdir(struct file_handle *handle, char *filename)
     uint32_t entry_pos;
 
     /* Find the entry in the directory */
-    if (find_entry_in_subdir(handle, &entry, &entry_pos, filename) < 0)
+    if (find_entry_in_subdir(&entry, &entry_pos, handle, filename) < 0)
         return -1;
 
     /* Check that the entry is a file */
