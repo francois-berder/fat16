@@ -9,6 +9,7 @@ class WriteSmallFileTest : public Test
 
         WriteSmallFileTest();
 
+        virtual void init() override;
         virtual bool run() override;
 
     private :
