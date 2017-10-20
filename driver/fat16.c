@@ -264,18 +264,18 @@ int fat16_open(const char *filepath, char mode)
 
         if (read_mode == WRITE_MODE) {
             /* Delete existing file */
-            if (!open_file_in_subdir(&dir_handle, filename, read_mode)) {
-                if (delete_file_in_subdir(&dir_handle, filename) < 0)
+            struct file_handle h = dir_handle;
+            if (!open_file_in_subdir(&h, filename, read_mode)) {
+                h = dir_handle;
+                if (delete_file_in_subdir(&h, filename) < 0)
                     return -1;
             }
-
-            if (create_file_in_subdir(&dir_handle, filename) < 0)
+            h = dir_handle;
+            if (create_file_in_subdir(&h, filename) < 0)
                 return -1;
         }
-
-        if (open_file_in_subdir(&dir_handle, filename, read_mode) < 0) {
+        if (open_file_in_subdir(&dir_handle, filename, read_mode) < 0)
             return -1;
-        }
 
         handles[handle] = dir_handle;
     }

@@ -8,6 +8,38 @@ extern struct fat16_layout layout;
 extern struct fat16_bpb bpb;
 
 /**
+ * @brief Read an entry from subdir
+ *
+ * This functions modifies cluster/offset of the handle
+ *
+ * @param[out] entry
+ * @param[in|out] handle
+ * @return 0 if successful, -1 otherwise
+ */
+static int read_entry_from_subdir(struct dir_entry *entry, struct file_handle *handle)
+{
+    /*
+    * Check if we reach end of cluster.
+    * We assume that cluster size is a multiple of dir_entry size
+    */
+    if (handle->offset == bpb.sectors_per_cluster * bpb.bytes_per_sector) {
+        uint16_t next_cluster;
+        get_next_cluster(&next_cluster, handle->cluster);
+        if (next_cluster >= 0xFFF8)
+            return -1;
+
+        move_to_data_region(next_cluster, 0);
+        handle->cluster = next_cluster;
+        handle->offset = 0;
+    }
+
+    move_to_data_region(handle->cluster, handle->offset);
+    dev.read(entry, sizeof(struct dir_entry));
+    handle->offset += sizeof(struct dir_entry);
+    return 0;
+}
+
+/**
  * @brief Find an entry in the subdirectory
  *
  * @param[out] entry
@@ -19,12 +51,9 @@ extern struct fat16_bpb bpb;
 static int find_entry_in_subdir(struct dir_entry *entry, uint32_t *entry_pos, struct file_handle *handle, char *name)
 {
     int ret = -1;
-    uint32_t current_cluster = handle->cluster;
-    uint32_t bytes_remaining_in_cluster = bpb.sectors_per_cluster * bpb.bytes_per_sector;
+    uint32_t starting_cluster = handle->cluster;
 
-    move_to_data_region(current_cluster, 0);
-    while (1) {
-        dev.read(entry, sizeof(struct dir_entry));
+    while (read_entry_from_subdir(entry, handle) == 0) {
 
         /* Skip available entry */
         if ((uint8_t)(entry->name[0]) == ROOT_DIR_AVAILABLE_ENTRY)
@@ -42,31 +71,16 @@ static int find_entry_in_subdir(struct dir_entry *entry, uint32_t *entry_pos, st
             ret = 0;
             break;
         }
-
-        bytes_remaining_in_cluster -= sizeof(struct dir_entry);
-
-        /*
-         * Check if we reach end of cluster.
-         * We assume that cluster size is a multiple of dir_entry size
-         */
-        if (bytes_remaining_in_cluster == 0) {
-            uint16_t next_cluster;
-            get_next_cluster(&next_cluster, current_cluster);
-            if (next_cluster >= 0xFFF8)
-                break;
-
-            move_to_data_region(next_cluster, 0);
-            current_cluster = next_cluster;
-            bytes_remaining_in_cluster = bpb.sectors_per_cluster * bpb.bytes_per_sector;
-        }
     }
 
     if (ret == 0 && entry_pos != NULL) {
-        uint32_t offset = bpb.sectors_per_cluster * bpb.bytes_per_sector;
-        offset -= bytes_remaining_in_cluster;
-        *entry_pos = move_to_data_region(current_cluster, offset);
+        *entry_pos = move_to_data_region(handle->cluster, handle->offset);
         *entry_pos -= sizeof(struct dir_entry);
     }
+
+    /* Restore state of handle */
+    handle->cluster = starting_cluster;
+    handle->offset = 0;
 
     return ret;
 }
@@ -78,29 +92,35 @@ static int find_available_entry_in_subdir(uint32_t *entry_pos, struct file_handl
     uint32_t starting_cluster = handle->cluster;
 
     /* Check if there is some space in the entry list */
-    while (read_from_handle(handle, &entry, sizeof(entry)) == sizeof(entry)) {
-        uint8_t tmp = entry.name[0];
-        if (tmp == 0 || tmp == ROOT_DIR_AVAILABLE_ENTRY) {
-            *entry_pos = move_to_data_region(handle->cluster, handle->offset);
-            *entry_pos -= sizeof(entry);
+    while (read_entry_from_subdir(&entry, handle) == 0) {
+        if (entry.name[0] == 0 || (uint8_t)entry.name[0] == ROOT_DIR_AVAILABLE_ENTRY) {
             ret = 0;
             break;
         }
+    }
+
+    if (ret == 0 && entry_pos != NULL) {
+        *entry_pos = move_to_data_region(handle->cluster, handle->offset);
+        *entry_pos -= sizeof(entry);
     }
 
     /*
      * If there is no space in the entry list, append a dummy entry to the
      * entry list.
      */
-    if (ret < 0) {
-        memset(&entry, 0, sizeof(entry));
-        if (write_from_handle(handle, &entry, sizeof(entry)) == sizeof(entry))
-            ret = 0;
-    }
+    if (ret == 0 && entry.name[0] == 0) {
+        struct dir_entry dummy_entry;
 
-    if (ret == 0) {
-        *entry_pos = move_to_data_region(handle->cluster, handle->offset);
-        *entry_pos -= sizeof(entry);
+        if (handle->offset == bpb.sectors_per_cluster * bpb.bytes_per_sector) {
+            uint16_t new_cluster;
+            if (allocate_cluster(&new_cluster, handle->cluster) < 0)
+                return -1;
+            handle->cluster = new_cluster;
+            handle->offset = 0;
+        }
+        move_to_data_region(handle->cluster, handle->offset);
+        memset(&dummy_entry, 0, sizeof(dummy_entry));
+        dev.write(&dummy_entry, sizeof(dummy_entry));
     }
 
     /* Restore previous state of handle */
