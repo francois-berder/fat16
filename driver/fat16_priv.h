@@ -84,6 +84,14 @@ enum FILE_ATTRIBUTE {
     ARCHIVE     = 0x20
 };
 
+/**
+ * @brief Print content of dir_entry
+ *
+ * This is just a function to help debugging the driver. If compiled in
+ * release mode, this function does not print anything.
+ *
+ * @param[in] e
+ */
 void dump_dir_entry(struct dir_entry e);
 
 /**
