@@ -381,7 +381,7 @@ int fat16_ls(uint16_t *index, char *filename)
 
     fat_filename[0] = 0;
     while (fat_filename[0] == 0
-           || ((uint8_t)fat_filename[0]) == ROOT_DIR_AVAILABLE_ENTRY) {
+           || ((uint8_t)fat_filename[0]) == AVAILABLE_DIR_ENTRY) {
         uint8_t attribute = 0;
 
         /*
@@ -396,7 +396,7 @@ int fat16_ls(uint16_t *index, char *filename)
 
         /* Also reading attribute to skip any vfat entry. */
         dev.read(&attribute, 1);
-        if ((attribute & ROOT_DIR_VFAT_ENTRY) == ROOT_DIR_VFAT_ENTRY) {
+        if ((attribute & VFAT_DIR_ENTRY) == VFAT_DIR_ENTRY) {
             fat_filename[0] = 0;    /* Make sure that the condition of the loop
                                      * remains true.
                                      */

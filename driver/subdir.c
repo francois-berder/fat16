@@ -56,7 +56,7 @@ static int find_entry_in_subdir(struct dir_entry *entry, uint32_t *entry_pos, st
     while (read_entry_from_subdir(entry, handle) == 0) {
 
         /* Skip available entry */
-        if ((uint8_t)(entry->name[0]) == ROOT_DIR_AVAILABLE_ENTRY)
+        if ((uint8_t)(entry->name[0]) == AVAILABLE_DIR_ENTRY)
             continue;
 
         /* Check if we reached end of entry list */
@@ -64,7 +64,7 @@ static int find_entry_in_subdir(struct dir_entry *entry, uint32_t *entry_pos, st
             break;
 
         /* Ignore any VFAT entry */
-        if ((entry->attribute & ROOT_DIR_VFAT_ENTRY) == ROOT_DIR_VFAT_ENTRY)
+        if ((entry->attribute & VFAT_DIR_ENTRY) == VFAT_DIR_ENTRY)
             continue;
 
         if (memcmp(name, entry->name, sizeof(entry->name)) == 0) {
@@ -93,7 +93,7 @@ static int find_available_entry_in_subdir(uint32_t *entry_pos, struct file_handl
 
     /* Check if there is some space in the entry list */
     while (read_entry_from_subdir(&entry, handle) == 0) {
-        if (entry.name[0] == 0 || (uint8_t)entry.name[0] == ROOT_DIR_AVAILABLE_ENTRY) {
+        if (entry.name[0] == 0 || (uint8_t)entry.name[0] == AVAILABLE_DIR_ENTRY) {
             ret = 0;
             break;
         }
@@ -144,7 +144,7 @@ static void mark_entry_as_available(uint32_t entry_pos)
     memset(&entry, 0, sizeof(entry));
 
     if (!last_entry_in_subdir(entry_pos))
-        entry.name[0] = ROOT_DIR_AVAILABLE_ENTRY;
+        entry.name[0] = AVAILABLE_DIR_ENTRY;
 
     dev.seek(entry_pos);
     dev.write(&entry, sizeof(entry));

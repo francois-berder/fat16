@@ -18,7 +18,7 @@ static int find_available_entry_in_root_directory(uint16_t *entry_index)
         uint8_t tmp;
         dev.read(&tmp, sizeof(tmp));
 
-        if (tmp == 0 || tmp == ROOT_DIR_AVAILABLE_ENTRY) {
+        if (tmp == 0 || tmp == AVAILABLE_DIR_ENTRY) {
             *entry_index = i;
             return 0;
         }
@@ -57,7 +57,7 @@ static void mark_root_entry_as_available(uint16_t entry_index)
     memset(&entry, 0, sizeof(entry));
 
     if (!last_entry_in_root_directory(entry_index))
-        entry.name[0] = ROOT_DIR_AVAILABLE_ENTRY;
+        entry.name[0] = AVAILABLE_DIR_ENTRY;
 
     move_to_root_directory_region(entry_index);
     dev.write(&entry, sizeof(entry));
@@ -74,7 +74,7 @@ static int find_root_directory_entry(uint16_t *entry_index, char *name)
         dump_dir_entry(e);
 
         /* Skip available entry */
-        if ((uint8_t)(e.name[0]) == ROOT_DIR_AVAILABLE_ENTRY)
+        if ((uint8_t)(e.name[0]) == AVAILABLE_DIR_ENTRY)
             continue;
 
         /* Do not allow filename to start with a NULL character */
@@ -82,7 +82,7 @@ static int find_root_directory_entry(uint16_t *entry_index, char *name)
             continue;
 
         /* Ignore any VFAT entry */
-        if ((e.attribute & ROOT_DIR_VFAT_ENTRY) == ROOT_DIR_VFAT_ENTRY)
+        if ((e.attribute & VFAT_DIR_ENTRY) == VFAT_DIR_ENTRY)
             continue;
 
         if (memcmp(name, e.name, sizeof(e.name)) == 0) {

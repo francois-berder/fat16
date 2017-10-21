@@ -6,8 +6,8 @@
 
 #define FIRST_CLUSTER_INDEX_IN_FAT     (3)
 #define MAX_BYTES_PER_CLUSTER           (32768LU)
-#define ROOT_DIR_VFAT_ENTRY             (0x0F)
-#define ROOT_DIR_AVAILABLE_ENTRY        (0xE5)
+#define VFAT_DIR_ENTRY                  (0x0F)
+#define AVAILABLE_DIR_ENTRY             (0xE5)
 
 #define READ_MODE       (1)
 #define WRITE_MODE      (0)
