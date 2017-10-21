@@ -1,6 +1,8 @@
 #ifndef __FAT16_SUBDIR_H__
 #define __FAT16_SUBDIR_H__
 
+#include <stdbool.h>
+
 /**
  * @brief Create a file in a subdirectory
  *
@@ -63,5 +65,13 @@ int delete_file_in_subdir(struct file_handle *handle, char *filename);
  * @return 0 if successful, -1 otherwise
  */
 int delete_directory_in_subdir(struct file_handle *handle, char *dirname);
+
+/**
+ * @brief Check a directory is empty
+ *
+ * @param[in] handle
+ * @return True if empty, False otherwise
+ */
+bool is_subdir_empty(struct file_handle *handle);
 
 #endif

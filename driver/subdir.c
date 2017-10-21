@@ -1,4 +1,3 @@
-#include <stdbool.h>
 #include <string.h>
 #include "fat16.h"
 #include "fat16_priv.h"
@@ -309,4 +308,35 @@ int delete_file_in_subdir(struct file_handle *handle, char *filename)
 int delete_directory_in_subdir(struct file_handle *handle, char *dirname)
 {
     return delete_entry_in_subdir(handle, dirname, false);
+}
+
+bool is_subdir_empty(struct file_handle *handle)
+{
+    struct dir_entry entry;
+    uint32_t starting_cluster = handle->cluster;
+    bool is_empty = true;
+
+    while (read_entry_from_subdir(&entry, handle) == 0) {
+
+        /* Ignore . and .. entries */
+        if (entry.name[0] == '.' && entry.name[1] == ' ')
+            continue;
+        if (entry.name[0] == '.' && entry.name[1] == '.' && entry.name[2] == ' ')
+            continue;
+
+        /* Check if we reached the end of the entry list */
+        if (entry.name[0] == 0)
+            break;
+
+        if ((uint8_t)entry.name[0] != AVAILABLE_DIR_ENTRY) {
+            is_empty = false;
+            break;
+        }
+    }
+
+    /* Restore state of handle */
+    handle->cluster = starting_cluster;
+    handle->offset = 0;
+
+    return is_empty;
 }
