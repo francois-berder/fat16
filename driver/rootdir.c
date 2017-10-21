@@ -53,12 +53,14 @@ static bool last_entry_in_root_directory(uint16_t entry_index)
 
 static void mark_root_entry_as_available(uint16_t entry_index)
 {
-    uint8_t entry_marker = 0;
+    struct dir_entry entry;
+    memset(&entry, 0, sizeof(entry));
 
     if (!last_entry_in_root_directory(entry_index))
-        entry_marker = ROOT_DIR_AVAILABLE_ENTRY;
+        entry.name[0] = ROOT_DIR_AVAILABLE_ENTRY;
+
     move_to_root_directory_region(entry_index);
-    dev.write(&entry_marker, sizeof(entry_marker));
+    dev.write(&entry, sizeof(entry));
 }
 
 static int find_root_directory_entry(uint16_t *entry_index, char *name)

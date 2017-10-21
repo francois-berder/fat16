@@ -140,13 +140,14 @@ static bool last_entry_in_subdir(uint32_t entry_pos)
 
 static void mark_entry_as_available(uint32_t entry_pos)
 {
-    uint8_t entry_marker = 0;
+    struct dir_entry entry;
+    memset(&entry, 0, sizeof(entry));
 
     if (!last_entry_in_subdir(entry_pos))
-        entry_marker = ROOT_DIR_AVAILABLE_ENTRY;
+        entry.name[0] = ROOT_DIR_AVAILABLE_ENTRY;
 
     dev.seek(entry_pos);
-    dev.write(&entry_marker, sizeof(entry_marker));
+    dev.write(&entry, sizeof(entry));
 }
 
 int create_file_in_subdir(struct file_handle *handle, char *filename)
