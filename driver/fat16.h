@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017  Francois Berder
+ * Copyright (C) 2017  Francois Berder <fberder@outlook.fr>
  *
  * This file is part of fat16.
  *
