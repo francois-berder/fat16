@@ -37,7 +37,7 @@ bool DeleteFileTest::run()
     if (file_exists("HELLO.TXT"))
         return false;
 
-    if (file_exists("HELLO.TXT"))
+    if (file_exists("/TMP/HELLO.TXT"))
         return false;
 
     return true;
