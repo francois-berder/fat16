@@ -28,7 +28,7 @@ struct storage_dev_t {
 /**
  * @brief Initialise the FAT16 driver.
  *
- * It reads the BPB, initialise internal variables.
+ * It reads the BPB, initialises internal variables.
  * It must be called before doing any other operations.
  *
  * @param dev
@@ -46,7 +46,7 @@ int fat16_init(struct storage_dev_t dev);
  * hand, if it exists, the content will be deleted first.
  *
  * @param[in] filepath
- * @param[in] mode Can be 'r' or 'w'
+ * @param[in] mode Can be 'r' (read only) or 'w' (write only)
  * @return A handle of the file (positive integer) if it could open it.
  * Otherwise, a negative value is returned.
  */
