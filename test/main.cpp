@@ -23,6 +23,7 @@
 #include <string>
 #include <vector>
 #include "../driver/fat16.h"
+#include "AppendSmallFileTest.hpp"
 #include "FilenameTest.hpp"
 #include "ReadEmptyFileTest.hpp"
 #include "ReadSmallFileTest.hpp"
@@ -50,6 +51,7 @@ int main()
 {
     std::vector<Test*> tests;
     std::vector<bool> test_results;
+    tests.push_back(new AppendSmallFileTest());
     tests.push_back(new DeleteFileTest());
     tests.push_back(new DeleteDirectoryTest());
     tests.push_back(new FilenameTest());
