@@ -49,4 +49,12 @@ int open_directory_in_root(struct file_handle *handle, char *dirname);
  */
 int delete_file_in_root(char *filename);
 
+/**
+ * @brief Delete a directory
+ *
+ * @param dirname 8.3 short name
+ * @return 0 if successful, -1 otherwise
+ */
+int delete_directory_in_root(char *dirname);
+
 #endif

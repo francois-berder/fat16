@@ -232,14 +232,14 @@ int open_directory_in_root(struct file_handle *handle, char *dirname)
     return open_entry_in_root(handle, dirname, 'r', false);
 }
 
-int delete_file_in_root(char *filename)
+static int delete_entry_in_root(char *name, bool is_file)
 {
     uint16_t entry_index = 0;
     uint32_t pos = 0;
     struct dir_entry entry;
 
     /* Find the entry in the root directory */
-    if (find_root_directory_entry(&entry_index, filename) < 0)
+    if (find_root_directory_entry(&entry_index, name) < 0)
         return -1;
 
     pos = layout.start_root_directory_region;
@@ -247,15 +247,25 @@ int delete_file_in_root(char *filename)
     dev.seek(pos);
     dev.read(&entry, sizeof(entry));
 
-    /* Check that the entry is a file */
-    if (entry.attribute & VOLUME
-    ||  entry.attribute & SUBDIR
-    ||  entry.attribute & SYSTEM)
+    /* Check that we are deleting an entry of the right type */
+    if (entry.attribute & VOLUME ||  entry.attribute & SYSTEM)
+    return -1;
+    if ((is_file && (entry.attribute & SUBDIR))
+    ||  (!is_file && !(entry.attribute & SUBDIR)))
         return -1;
-
 
     mark_root_entry_as_available(entry_index);
     free_cluster_chain(entry.starting_cluster);
 
     return 0;
+}
+
+int delete_file_in_root(char *filename)
+{
+    return delete_entry_in_root(filename, true);
+}
+
+int delete_directory_in_root(char *dirname)
+{
+    return delete_entry_in_root(dirname, false);
 }
