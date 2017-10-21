@@ -123,8 +123,7 @@ void free_cluster_chain(uint16_t cluster)
         uint32_t pos_cluster = move_to_fat_region(cluster);
         dev.read(&next_cluster, sizeof(next_cluster));
 
-        dev.seek(pos_cluster- sizeof(next_cluster));
-
+        dev.seek(pos_cluster);
         dev.write(&free_cluster, sizeof(free_cluster));
 
         if (next_cluster >= 0xFFF8)
