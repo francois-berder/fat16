@@ -278,7 +278,6 @@ static int open_entry_in_subdir(struct entry_handle *handle, char *name, char mo
     if ((entry.attribute & READ_ONLY) && mode != 'r')
         return -1;
 
-    memcpy(handle->filename, name, sizeof(handle->filename));
     handle->mode = mode;
     handle->pos_entry = entry_pos;
 

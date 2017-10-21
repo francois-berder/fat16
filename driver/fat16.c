@@ -162,9 +162,10 @@ static uint8_t find_available_handle(void)
 {
     uint8_t i = 0;
 
-    for (; i < HANDLE_COUNT; ++i)
-        if (handles[i].filename[0] == 0)
+    for (; i < HANDLE_COUNT; ++i) {
+        if (handles[i].mode == 0)
             return i;
+    }
 
     return INVALID_HANDLE;
 }
@@ -175,7 +176,7 @@ static bool check_handle(uint8_t handle)
     if (handle >= HANDLE_COUNT)
         return false;
 
-    if (handles[handle].filename[0] == 0)
+    if (handles[handle].mode == 0)
         return false;
 
     return true;
@@ -257,14 +258,14 @@ int fat16_open(const char *filepath, char mode)
             /* Create file if it does not exist */
             if (open_file_in_root(&handles[handle], filename, mode) < 0) {
                 if (create_file_in_root(filename) < 0) {
-                    handles[handle].filename[0] = 0;
+                    handles[handle].mode = 0;
                     return -1;
                 }
             }
         }
 
         if (open_file_in_root(&handles[handle], filename, mode) < 0) {
-            handles[handle].filename[0] = 0;
+            handles[handle].mode = 0;
             return -1;
         }
     } else {
@@ -305,7 +306,7 @@ int fat16_open(const char *filepath, char mode)
      * mode. Hence, a file can only be opened several times in read mode.
      */
     for (i = 0; i < HANDLE_COUNT; ++i) {
-        if (handles[i].filename[0] == 0)
+        if (handles[i].mode == 0)
             continue;
 
         if (i == handle)
@@ -313,7 +314,7 @@ int fat16_open(const char *filepath, char mode)
 
         if (handles[handle].pos_entry == handles[i].pos_entry) {
             if ((mode == 'r' && handles[i].mode != 'r') || mode != 'r') {
-                handles[handle].filename[0] = 0;
+                handles[handle].mode = 0;
                 return -1;
             }
         }
@@ -367,7 +368,7 @@ int fat16_close(uint8_t handle)
         return -1;
     }
 
-    handles[handle].filename[0] = 0;
+    handles[handle].mode = 0;
     return 0;
 }
 
