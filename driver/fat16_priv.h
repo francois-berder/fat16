@@ -41,12 +41,12 @@ struct fat16_bpb {
 };
 
 struct file_handle {
-    char        filename[11];       /* If handle is not used, filename[0] == 0 */
-    bool        read_mode;          /* True if reading from file, false if writing to file */
-    uint32_t    pos_entry;          /* Absolute position of file entry in its directory */
-    uint16_t    cluster;            /* Current cluster reading/writing */
-    uint16_t    offset;             /* Offset in bytes in cluster */
-    uint32_t    remaining_bytes;    /* Remaining bytes to be read in bytes in the file, only used in read mode */
+    char        filename[11];       /**< If handle is not used, filename[0] == 0 */
+    bool        read_mode;          /**< True if reading from file, false if writing to file */
+    uint32_t    pos_entry;          /**< Absolute position of file entry in its directory */
+    uint16_t    cluster;            /**< Current cluster reading/writing */
+    uint16_t    offset;             /**< Offset in bytes in cluster */
+    uint32_t    remaining_bytes;    /**< Remaining bytes to be read in bytes in the file, only used in read mode */
 };
 
 struct dir_entry {
