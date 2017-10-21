@@ -59,7 +59,7 @@ struct fat16_bpb {
 
 struct entry_handle {
     char        filename[11];       /**< If handle is not used, filename[0] == 0 */
-    char        mode;               /**< 'r' reading from file, 'w' writing to file */
+    char        mode;               /**< 'r' read from file, 'w' write to file, 'a' append to file */
     uint32_t    pos_entry;          /**< Absolute position of file entry in its directory */
     uint16_t    cluster;            /**< Current cluster reading/writing */
     uint16_t    offset;             /**< Offset in bytes in cluster */
