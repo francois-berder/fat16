@@ -224,7 +224,7 @@ int fat16_open(const char *filepath, char mode)
     char filename[11];
     uint8_t handle = INVALID_HANDLE;
 
-    if (mode != 'r' && mode != 'w') {
+    if (mode != 'r' && mode != 'w' && mode != 'a') {
         FAT16DBG("FAT16: Invalid mode.\n");
         return -1;
     }
@@ -253,6 +253,14 @@ int fat16_open(const char *filepath, char mode)
 
             if (create_file_in_root(filename) < 0)
                 return -1;
+        } else if (mode == 'a') {
+            /* Create file if it does not exist */
+            if (open_file_in_root(&handles[handle], filename, mode) < 0) {
+                if (create_file_in_root(filename) < 0) {
+                    handles[handle].filename[0] = 0;
+                    return -1;
+                }
+            }
         }
 
         if (open_file_in_root(&handles[handle], filename, mode) < 0) {
@@ -275,6 +283,13 @@ int fat16_open(const char *filepath, char mode)
             h = dir_handle;
             if (create_file_in_subdir(&h, filename) < 0)
                 return -1;
+        } else if (mode == 'a') {
+            /* Create file if it does not exist */
+            struct file_handle h = dir_handle;
+            if (open_file_in_subdir(&h, filename, mode) < 0) {
+                if (create_file_in_subdir(&h, filename) < 0)
+                    return -1;
+            }
         }
         if (open_file_in_subdir(&dir_handle, filename, mode) < 0)
             return -1;
@@ -329,7 +344,7 @@ int fat16_write(uint8_t handle, const void *buffer, uint32_t count)
         return -1;
     }
 
-    if (handles[handle].mode != 'w') {
+    if (handles[handle].mode == 'r') {
         FAT16DBG("FAT16: fat16_write: Cannot write with handle in read mode.\n");
         return -1;
     }

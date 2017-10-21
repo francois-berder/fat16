@@ -232,12 +232,29 @@ static int open_entry_in_root(struct file_handle *handle, char *name, char mode,
     memcpy(handle->filename, name, sizeof(handle->filename));
     handle->mode = mode;
 
-    handle->cluster = entry.starting_cluster;
-    handle->offset = 0;
-    if (mode == 'w')
-        handle->remaining_bytes = 0;
-    else
+    /*
+     * In append mode, set the current position at the end of the file.
+     * Otherwise, let's start at the beginning.
+     */
+    if (mode == 'a') {
+        handle->cluster = entry.starting_cluster;
+        uint32_t offset = entry.size;
+        uint16_t next_cluster;
+        get_next_cluster(&next_cluster, handle->cluster);
+        while (next_cluster < 0xFFF8) {
+            handle->cluster = next_cluster;
+            offset -= bpb.sectors_per_cluster * bpb.bytes_per_sector;
+            get_next_cluster(&next_cluster, handle->cluster);
+        }
+        handle->offset = (uint16_t)offset;
+    } else {
+        handle->cluster = entry.starting_cluster;
+        handle->offset = 0;
+    }
+    if (mode == 'r')
         handle->remaining_bytes = entry.size;
+    else
+        handle->remaining_bytes = 0;
 
     return 0;
 }
