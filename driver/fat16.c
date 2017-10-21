@@ -448,3 +448,33 @@ int fat16_mkdir(const char *dirpath)
         return create_directory_in_subdir(&handle, dirname);
     }
 }
+
+int fat16_rmdir(const char *dirpath)
+{
+    char dirname[11];
+    struct file_handle handle, dir_handle;
+    bool in_root = is_in_root(dirpath);
+
+    if (in_root) {
+        if (to_short_filename(dirname, dirpath) < 0)
+            return -1;
+
+        if (open_directory_in_root(&handle, dirname) < 0)
+            return -1;
+    } else {
+        if (navigate_to_subdir(&dir_handle, dirname, dirpath) < 0)
+            return -1;
+
+        handle = dir_handle;
+        if (open_directory_in_subdir(&handle, dirname) < 0)
+            return -1;
+    }
+
+    if (!is_subdir_empty(&handle))
+        return -1;
+
+    if (in_root)
+        return delete_directory_in_root(dirname);
+    else
+        return delete_directory_in_subdir(&dir_handle, dirname);
+}

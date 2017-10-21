@@ -130,6 +130,16 @@ int fat16_ls(uint16_t *index, char *filename);
  */
 int fat16_mkdir(const char *dirpath);
 
+/**
+ * @brief Delete a directory
+ *
+ * The directory must be empty.
+ *
+ * @param[in] dirpath
+ * @return 0 if successful, -1 otherwise
+ */
+int fat16_rmdir(const char *dirpath);
+
 #ifdef __cplusplus
 }
 #endif
