@@ -33,7 +33,7 @@ int create_file_in_root(char *filename);
 /**
  * @brief Create a directory in the root directory
  *
- * @param[in] dirname 8.3 short filename
+ * @param[in] dirname 8.3 short name
  * @retval -1 if there is no available entry in the root directory,
  * @reval 0 if successful
  */
@@ -53,7 +53,7 @@ int open_file_in_root(struct entry_handle *handle, char *filename, char mode);
  * @brief Open a directory located in the root directory
  *
  * @param[out] handle
- * @param[in] dirname 8.3 short filename
+ * @param[in] dirname 8.3 short name
  * @return 0 if successful, -1 otherwise
  */
 int open_directory_in_root(struct entry_handle *handle, char *dirname);

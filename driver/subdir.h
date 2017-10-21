@@ -50,7 +50,7 @@ int create_directory_in_subdir(struct entry_handle *handle, char *dirname);
  * directory
  *
  * @param[in|out] handle
- * @param[in] filename
+ * @param[in] filename 8.3 short name
  * @param[in] mode
  * @return 0 if successful, -1 otherwise
  */
@@ -63,7 +63,7 @@ int open_file_in_subdir(struct entry_handle *handle, char *filename, char mode);
  * exist in the directory
  *
  * @param[in|out] handle
- * @param[in] filename
+ * @param[in] dirname 8.3 short name
  * @return 0 if successful, -1 otherwise
  */
 int open_directory_in_subdir(struct entry_handle *handle, char *dirname);
@@ -72,7 +72,7 @@ int open_directory_in_subdir(struct entry_handle *handle, char *dirname);
  * @brief Delete a file in a subdirectory
  *
  * @param[in] handle
- * @param[in] filename
+ * @param[in] filename 8.3 short name
  * @return 0 if successful, -1 otherwise
  */
 int delete_file_in_subdir(struct entry_handle *handle, char *filename);
