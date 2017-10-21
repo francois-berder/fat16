@@ -1,8 +1,6 @@
 #ifndef __FAT16_SUBDIR_H__
 #define __FAT16_SUBDIR_H__
 
-#include <stdbool.h>
-
 /**
  * @brief Create a file in a subdirectory
  *

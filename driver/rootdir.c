@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include <string.h>
 #include "debug.h"
 #include "fat16.h"

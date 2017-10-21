@@ -1,9 +1,6 @@
 #ifndef __FAT16_ROOTDIR_H__
 #define __FAT16_ROOTDIR_H__
 
-#include <stdbool.h>
-#include <stdint.h>
-
 /**
  * @brief Create a file in the root directory
  *
