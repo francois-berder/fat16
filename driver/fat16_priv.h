@@ -30,12 +30,6 @@
 #define AVAILABLE_DIR_ENTRY             (0xE5)
 
 
-/* cluster is a 16bit integer stored 26 bytes after the start of a
- * root directory entry.
- */
-#define CLUSTER_OFFSET_FILE_ENTRY   (26)
-#define SIZE_OFFSET_FILE_ENTRY      (28)
-
 struct fat16_layout {
     uint32_t start_fat_region;              /**< offset in bytes of first FAT */
     uint32_t start_root_directory_region;   /**< offset in bytes of root directory */

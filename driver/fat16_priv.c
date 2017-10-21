@@ -18,6 +18,7 @@
  */
 
 
+#include <stddef.h>
 #include <stdio.h>
 #include "debug.h"
 #include "fat16.h"
@@ -221,7 +222,7 @@ static void update_size_file(uint32_t pos_entry, uint32_t bytes_written_count)
 {
     uint32_t file_size = 0;
     uint32_t pos = pos_entry;
-    pos += SIZE_OFFSET_FILE_ENTRY;
+    pos += offsetof(struct dir_entry, size);
 
     dev.seek(pos);
     dev.read(&file_size, sizeof(file_size));
@@ -255,7 +256,7 @@ int write_from_handle(struct entry_handle *handle, const void *buffer, uint32_t 
 
             /* If the file was empty, update cluster in root directory entry */
             if (handle->cluster == 0) {
-                dev.seek(handle->pos_entry + CLUSTER_OFFSET_FILE_ENTRY);
+                dev.seek(handle->pos_entry + offsetof(struct dir_entry, starting_cluster));
                 dev.write(&new_cluster, sizeof(new_cluster));
             }
 

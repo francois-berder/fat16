@@ -19,6 +19,7 @@
 
 
 #include <stdbool.h>
+#include <stddef.h>
 #include <string.h>
 #include "debug.h"
 #include "fat16.h"
@@ -166,7 +167,7 @@ int create_directory_in_root(char *dirname)
         return -1;
 
     pos = move_to_root_directory_region(entry_index);
-    pos += CLUSTER_OFFSET_FILE_ENTRY;
+    pos += offsetof(struct dir_entry, starting_cluster);
     dev.seek(pos);
     dev.write(&entry.starting_cluster, sizeof(entry.starting_cluster));
 
