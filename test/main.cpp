@@ -13,6 +13,7 @@
 #include "LsTest.hpp"
 #include "MkdirTest.hpp"
 #include "DeleteFileTest.hpp"
+#include "DeleteDirectoryTest.hpp"
 #include "Common.hpp"
 
 #define SECTOR_SIZE (2048)
@@ -30,6 +31,7 @@ int main()
     std::vector<Test*> tests;
     std::vector<bool> test_results;
     tests.push_back(new DeleteFileTest());
+    tests.push_back(new DeleteDirectoryTest());
     tests.push_back(new FilenameTest());
     tests.push_back(new ReadEmptyFileTest());
     tests.push_back(new ReadSmallFileTest());
