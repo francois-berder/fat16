@@ -34,7 +34,7 @@
 
 struct fat16_bpb bpb;
 
-static struct file_handle handles[HANDLE_COUNT];
+static struct entry_handle handles[HANDLE_COUNT];
 
 struct fat16_layout layout;
 
@@ -268,13 +268,13 @@ int fat16_open(const char *filepath, char mode)
             return -1;
         }
     } else {
-        struct file_handle dir_handle;
+        struct entry_handle dir_handle;
         if (navigate_to_subdir(&dir_handle, filename, filepath) < 0)
             return -1;
 
         if (mode == 'w') {
             /* Delete existing file */
-            struct file_handle h = dir_handle;
+            struct entry_handle h = dir_handle;
             if (!open_file_in_subdir(&h, filename, mode)) {
                 h = dir_handle;
                 if (delete_file_in_subdir(&h, filename) < 0)
@@ -285,7 +285,7 @@ int fat16_open(const char *filepath, char mode)
                 return -1;
         } else if (mode == 'a') {
             /* Create file if it does not exist */
-            struct file_handle h = dir_handle;
+            struct entry_handle h = dir_handle;
             if (open_file_in_subdir(&h, filename, mode) < 0) {
                 if (create_file_in_subdir(&h, filename) < 0)
                     return -1;
@@ -387,7 +387,7 @@ int fat16_rm(const char *filepath)
         if (delete_file_in_root(filename) < 0)
             return -1;
     } else {
-        struct file_handle dir_handle;
+        struct entry_handle dir_handle;
         if (navigate_to_subdir(&dir_handle, filename, filepath) < 0)
             return -1;
 
@@ -476,7 +476,7 @@ int fat16_mkdir(const char *dirpath)
 
         return create_directory_in_root(dirname);
     } else {
-        struct file_handle handle;
+        struct entry_handle handle;
 
         if (navigate_to_subdir(&handle, dirname, dirpath) < 0)
             return -1;
@@ -488,7 +488,7 @@ int fat16_mkdir(const char *dirpath)
 int fat16_rmdir(const char *dirpath)
 {
     char dirname[11];
-    struct file_handle handle, dir_handle;
+    struct entry_handle handle, dir_handle;
     bool in_root = is_in_root(dirpath);
 
     if (in_root) {

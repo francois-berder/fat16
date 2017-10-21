@@ -36,7 +36,7 @@ extern struct fat16_bpb bpb;
  * @param[in|out] handle
  * @return 0 if successful, -1 otherwise
  */
-static int read_entry_from_subdir(struct dir_entry *entry, struct file_handle *handle)
+static int read_entry_from_subdir(struct dir_entry *entry, struct entry_handle *handle)
 {
     /*
     * Check if we reach end of cluster.
@@ -68,7 +68,7 @@ static int read_entry_from_subdir(struct dir_entry *entry, struct file_handle *h
  * @param[in] name 8.3 short name
  * @return 0 if an entry with this name has been found, -1 otherwise
  */
-static int find_entry_in_subdir(struct dir_entry *entry, uint32_t *entry_pos, struct file_handle *handle, char *name)
+static int find_entry_in_subdir(struct dir_entry *entry, uint32_t *entry_pos, struct entry_handle *handle, char *name)
 {
     int ret = -1;
     uint32_t starting_cluster = handle->cluster;
@@ -105,7 +105,7 @@ static int find_entry_in_subdir(struct dir_entry *entry, uint32_t *entry_pos, st
     return ret;
 }
 
-static int find_available_entry_in_subdir(uint32_t *entry_pos, struct file_handle *handle)
+static int find_available_entry_in_subdir(uint32_t *entry_pos, struct entry_handle *handle)
 {
     int ret = -1;
     struct dir_entry entry;
@@ -170,7 +170,7 @@ static void mark_entry_as_available(uint32_t entry_pos)
     dev.write(&entry, sizeof(entry));
 }
 
-int create_file_in_subdir(struct file_handle *handle, char *filename)
+int create_file_in_subdir(struct entry_handle *handle, char *filename)
 {
     struct dir_entry entry;
     uint32_t entry_pos;
@@ -196,7 +196,7 @@ int create_file_in_subdir(struct file_handle *handle, char *filename)
     return 0;
 }
 
-int create_directory_in_subdir(struct file_handle *handle, char *dirname)
+int create_directory_in_subdir(struct entry_handle *handle, char *dirname)
 {
     struct dir_entry entry;
     uint32_t entry_pos;
@@ -260,7 +260,7 @@ int create_directory_in_subdir(struct file_handle *handle, char *dirname)
     return 0;
 }
 
-static int open_entry_in_subdir(struct file_handle *handle, char *name, char mode, bool is_file)
+static int open_entry_in_subdir(struct entry_handle *handle, char *name, char mode, bool is_file)
 {
     struct dir_entry entry;
     uint32_t entry_pos;
@@ -309,17 +309,17 @@ static int open_entry_in_subdir(struct file_handle *handle, char *name, char mod
     return 0;
 }
 
-int open_file_in_subdir(struct file_handle *handle, char *filename, char mode)
+int open_file_in_subdir(struct entry_handle *handle, char *filename, char mode)
 {
     return open_entry_in_subdir(handle, filename, mode, true);
 }
 
-int open_directory_in_subdir(struct file_handle *handle, char *dirname)
+int open_directory_in_subdir(struct entry_handle *handle, char *dirname)
 {
     return open_entry_in_subdir(handle, dirname, 'r', false);
 }
 
-static int delete_entry_in_subdir(struct file_handle *handle, char *name, bool is_file)
+static int delete_entry_in_subdir(struct entry_handle *handle, char *name, bool is_file)
 {
     struct dir_entry entry;
     uint32_t entry_pos;
@@ -341,17 +341,17 @@ static int delete_entry_in_subdir(struct file_handle *handle, char *name, bool i
     return 0;
 }
 
-int delete_file_in_subdir(struct file_handle *handle, char *filename)
+int delete_file_in_subdir(struct entry_handle *handle, char *filename)
 {
     return delete_entry_in_subdir(handle, filename, true);
 }
 
-int delete_directory_in_subdir(struct file_handle *handle, char *dirname)
+int delete_directory_in_subdir(struct entry_handle *handle, char *dirname)
 {
     return delete_entry_in_subdir(handle, dirname, false);
 }
 
-bool is_subdir_empty(struct file_handle *handle)
+bool is_subdir_empty(struct entry_handle *handle)
 {
     struct dir_entry entry;
     uint32_t starting_cluster = handle->cluster;

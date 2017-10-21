@@ -160,7 +160,7 @@ int get_next_cluster(uint16_t *next_cluster, uint16_t cluster)
     return 0;
 }
 
-int read_from_handle(struct file_handle *handle, void *buffer, uint32_t count)
+int read_from_handle(struct entry_handle *handle, void *buffer, uint32_t count)
 {
     uint32_t bytes_read_count = 0;
     uint8_t *bytes = (uint8_t *)buffer;
@@ -232,7 +232,7 @@ static void update_size_file(uint32_t pos_entry, uint32_t bytes_written_count)
     dev.write(&file_size, sizeof(file_size));
 }
 
-int write_from_handle(struct file_handle *handle, const void *buffer, uint32_t count)
+int write_from_handle(struct entry_handle *handle, const void *buffer, uint32_t count)
 {
     uint32_t bytes_written_count = 0;
     const uint8_t *bytes = (const uint8_t *)buffer;
@@ -283,7 +283,7 @@ int write_from_handle(struct file_handle *handle, const void *buffer, uint32_t c
     return bytes_written_count;
 }
 
-int navigate_to_subdir(struct file_handle *handle, char *entry_name, const char *path)
+int navigate_to_subdir(struct entry_handle *handle, char *entry_name, const char *path)
 {
     int ret;
     char subdir_name[13];

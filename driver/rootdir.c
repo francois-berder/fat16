@@ -206,7 +206,7 @@ int create_directory_in_root(char *dirname)
     return 0;
 }
 
-static int open_entry_in_root(struct file_handle *handle, char *name, char mode, bool is_file)
+static int open_entry_in_root(struct entry_handle *handle, char *name, char mode, bool is_file)
 {
     uint16_t entry_index;
     struct dir_entry entry;
@@ -259,12 +259,12 @@ static int open_entry_in_root(struct file_handle *handle, char *name, char mode,
     return 0;
 }
 
-int open_file_in_root(struct file_handle *handle, char *filename, char mode)
+int open_file_in_root(struct entry_handle *handle, char *filename, char mode)
 {
     return open_entry_in_root(handle, filename, mode, true);
 }
 
-int open_directory_in_root(struct file_handle *handle, char *dirname)
+int open_directory_in_root(struct entry_handle *handle, char *dirname)
 {
     return open_entry_in_root(handle, dirname, 'r', false);
 }

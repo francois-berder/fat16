@@ -47,7 +47,7 @@ int create_directory_in_root(char *dirname);
  * @param[in] mode
  * @return 0 if successful, -1 otherwise
  */
-int open_file_in_root(struct file_handle *handle, char *filename, char mode);
+int open_file_in_root(struct entry_handle *handle, char *filename, char mode);
 
 /**
  * @brief Open a directory located in the root directory
@@ -56,7 +56,7 @@ int open_file_in_root(struct file_handle *handle, char *filename, char mode);
  * @param[in] dirname 8.3 short filename
  * @return 0 if successful, -1 otherwise
  */
-int open_directory_in_root(struct file_handle *handle, char *dirname);
+int open_directory_in_root(struct entry_handle *handle, char *dirname);
 
 /**
  * @brief Delete a file.

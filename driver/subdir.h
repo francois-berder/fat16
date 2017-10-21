@@ -32,7 +32,7 @@
  * @param[in] filename 8.3 short name
  * @return 0 if successful, -1 otherwise
  */
-int create_file_in_subdir(struct file_handle *handle, char *filename);
+int create_file_in_subdir(struct entry_handle *handle, char *filename);
 
 /**
  * @brief Create a directory in a subdirectory
@@ -41,7 +41,7 @@ int create_file_in_subdir(struct file_handle *handle, char *filename);
  * @param[in] dirname 8.3 short name
  * @return 0 if successful, -1 otherwise
  */
-int create_directory_in_subdir(struct file_handle *handle, char *dirname);
+int create_directory_in_subdir(struct entry_handle *handle, char *dirname);
 
 /**
  * @brief Open a file in a subdirectory
@@ -54,7 +54,7 @@ int create_directory_in_subdir(struct file_handle *handle, char *dirname);
  * @param[in] mode
  * @return 0 if successful, -1 otherwise
  */
-int open_file_in_subdir(struct file_handle *handle, char *filename, char mode);
+int open_file_in_subdir(struct entry_handle *handle, char *filename, char mode);
 
 /**
  * @brief Open a directory in a subdirectory
@@ -66,7 +66,7 @@ int open_file_in_subdir(struct file_handle *handle, char *filename, char mode);
  * @param[in] filename
  * @return 0 if successful, -1 otherwise
  */
-int open_directory_in_subdir(struct file_handle *handle, char *dirname);
+int open_directory_in_subdir(struct entry_handle *handle, char *dirname);
 
 /**
  * @brief Delete a file in a subdirectory
@@ -75,7 +75,7 @@ int open_directory_in_subdir(struct file_handle *handle, char *dirname);
  * @param[in] filename
  * @return 0 if successful, -1 otherwise
  */
-int delete_file_in_subdir(struct file_handle *handle, char *filename);
+int delete_file_in_subdir(struct entry_handle *handle, char *filename);
 
 /**
  * @brief Delete a directory in a subdirectory
@@ -84,7 +84,7 @@ int delete_file_in_subdir(struct file_handle *handle, char *filename);
  * @param[in] dirname 8.3 short name
  * @return 0 if successful, -1 otherwise
  */
-int delete_directory_in_subdir(struct file_handle *handle, char *dirname);
+int delete_directory_in_subdir(struct entry_handle *handle, char *dirname);
 
 /**
  * @brief Check a directory is empty
@@ -92,6 +92,6 @@ int delete_directory_in_subdir(struct file_handle *handle, char *dirname);
  * @param[in] handle
  * @return True if empty, False otherwise
  */
-bool is_subdir_empty(struct file_handle *handle);
+bool is_subdir_empty(struct entry_handle *handle);
 
 #endif

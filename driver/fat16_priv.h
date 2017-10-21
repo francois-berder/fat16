@@ -57,7 +57,7 @@ struct fat16_bpb {
     char        fs_type[8];
 };
 
-struct file_handle {
+struct entry_handle {
     char        filename[11];       /**< If handle is not used, filename[0] == 0 */
     char        mode;               /**< 'r' reading from file, 'w' writing to file */
     uint32_t    pos_entry;          /**< Absolute position of file entry in its directory */
@@ -145,7 +145,7 @@ int get_next_cluster(uint16_t *next_cluster, uint16_t cluster);
  * @param[in] count
  * @return number of bytes read, -1 if an error happened
  */
-int read_from_handle(struct file_handle *handle, void *buffer, uint32_t count);
+int read_from_handle(struct entry_handle *handle, void *buffer, uint32_t count);
 
 /**
  * @brief Write bytes to file/directory using handle
@@ -155,7 +155,7 @@ int read_from_handle(struct file_handle *handle, void *buffer, uint32_t count);
  * @param[in] count
  * @return number of bytes written, -1 if an error happened
  */
-int write_from_handle(struct file_handle *handle, const void *buffer, uint32_t count);
+int write_from_handle(struct entry_handle *handle, const void *buffer, uint32_t count);
 
 /**
  * @brief Navigate to subdirectory
@@ -165,6 +165,6 @@ int write_from_handle(struct file_handle *handle, const void *buffer, uint32_t c
  * @param[in] path
  * @return 0 if succesful, -1 otherwise
  */
-int navigate_to_subdir(struct file_handle *handle, char *entry_name, const char *path);
+int navigate_to_subdir(struct entry_handle *handle, char *entry_name, const char *path);
 
 #endif
