@@ -93,7 +93,7 @@ int fat16_close(uint8_t handle);
  * @param[in] filepath
  * @return 0 if successful, -1 otherwise
  */
-int fat16_delete(const char *filepath);
+int fat16_rm(const char *filepath);
 
 /**
  * @brief Gives the name of a file in the root directory.

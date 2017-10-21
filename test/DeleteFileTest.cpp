@@ -28,10 +28,10 @@ bool DeleteFileTest::run()
         return false;
 
 
-    if (fat16_delete("HELLO.TXT") < 0)
+    if (fat16_rm("HELLO.TXT") < 0)
         return false;
 
-    if (fat16_delete("/TMP/HELLO.TXT") < 0)
+    if (fat16_rm("/TMP/HELLO.TXT") < 0)
         return false;
 
     if (file_exists("HELLO.TXT"))

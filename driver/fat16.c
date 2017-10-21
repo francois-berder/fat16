@@ -335,7 +335,7 @@ int fat16_close(uint8_t handle)
     return 0;
 }
 
-int fat16_delete(const char *filepath)
+int fat16_rm(const char *filepath)
 {
     char filename[11];
 
