@@ -65,7 +65,7 @@ struct entry_handle {
     uint32_t    remaining_bytes;    /**< Remaining bytes to be read in bytes in the file, only used in read mode */
 };
 
-struct dir_entry {
+struct __attribute__((packed)) dir_entry {
     char        name[11];
     uint8_t     attribute;
     uint8_t     reserved[10];
