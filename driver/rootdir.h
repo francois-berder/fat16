@@ -27,10 +27,10 @@ int create_directory_in_root(char *dirname);
  *
  * @param[out] handle
  * @param[in] name 8.3 short filename
- * @param[in] read_mode
+ * @param[in] mode
  * @return 0 if successful, -1 otherwise
  */
-int open_file_in_root(struct file_handle *handle, char *filename, bool read_mode);
+int open_file_in_root(struct file_handle *handle, char *filename, char mode);
 
 /**
  * @brief Open a directory located in the root directory

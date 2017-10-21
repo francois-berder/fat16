@@ -9,9 +9,6 @@
 #define VFAT_DIR_ENTRY                  (0x0F)
 #define AVAILABLE_DIR_ENTRY             (0xE5)
 
-#define READ_MODE       (1)
-#define WRITE_MODE      (0)
-
 
 /* cluster is a 16bit integer stored 26 bytes after the start of a
  * root directory entry.
@@ -42,7 +39,7 @@ struct fat16_bpb {
 
 struct file_handle {
     char        filename[11];       /**< If handle is not used, filename[0] == 0 */
-    bool        read_mode;          /**< True if reading from file, false if writing to file */
+    char        mode;               /**< 'r' reading from file, 'w' writing to file */
     uint32_t    pos_entry;          /**< Absolute position of file entry in its directory */
     uint16_t    cluster;            /**< Current cluster reading/writing */
     uint16_t    offset;             /**< Offset in bytes in cluster */

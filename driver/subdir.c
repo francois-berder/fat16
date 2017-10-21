@@ -240,7 +240,7 @@ int create_directory_in_subdir(struct file_handle *handle, char *dirname)
     return 0;
 }
 
-static int open_entry_in_subdir(struct file_handle *handle, char *name, bool read_mode, bool is_file)
+static int open_entry_in_subdir(struct file_handle *handle, char *name, char mode, bool is_file)
 {
     struct dir_entry entry;
     uint32_t entry_pos;
@@ -255,11 +255,11 @@ static int open_entry_in_subdir(struct file_handle *handle, char *name, bool rea
     if (is_file && entry.attribute & SUBDIR)
         return -1;
 
-    if ((entry.attribute & READ_ONLY) && read_mode != READ_MODE)
+    if ((entry.attribute & READ_ONLY) && mode != 'r')
         return -1;
 
     memcpy(handle->filename, name, sizeof(handle->filename));
-    handle->read_mode = read_mode;
+    handle->mode = mode;
     handle->pos_entry = entry_pos;
     handle->cluster = entry.starting_cluster;
     handle->offset = 0;
@@ -268,14 +268,14 @@ static int open_entry_in_subdir(struct file_handle *handle, char *name, bool rea
     return 0;
 }
 
-int open_file_in_subdir(struct file_handle *handle, char *filename, bool read_mode)
+int open_file_in_subdir(struct file_handle *handle, char *filename, char mode)
 {
-    return open_entry_in_subdir(handle, filename, read_mode, true);
+    return open_entry_in_subdir(handle, filename, mode, true);
 }
 
 int open_directory_in_subdir(struct file_handle *handle, char *dirname)
 {
-    return open_entry_in_subdir(handle, dirname, true, false);
+    return open_entry_in_subdir(handle, dirname, 'r', false);
 }
 
 int delete_file_in_subdir(struct file_handle *handle, char *filename)

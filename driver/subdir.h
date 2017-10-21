@@ -31,10 +31,10 @@ int create_directory_in_subdir(struct file_handle *handle, char *dirname);
  *
  * @param[in|out] handle
  * @param[in] filename
- * @param[in] read_mode
+ * @param[in] mode
  * @return 0 if successful, -1 otherwise
  */
-int open_file_in_subdir(struct file_handle *handle, char *filename, bool read_mode);
+int open_file_in_subdir(struct file_handle *handle, char *filename, char mode);
 
 /**
  * @brief Open a directory in a subdirectory
@@ -44,7 +44,6 @@ int open_file_in_subdir(struct file_handle *handle, char *filename, bool read_mo
  *
  * @param[in|out] handle
  * @param[in] filename
- * @param[in] read_mode
  * @return 0 if successful, -1 otherwise
  */
 int open_directory_in_subdir(struct file_handle *handle, char *dirname);

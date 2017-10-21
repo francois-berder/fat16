@@ -185,7 +185,7 @@ int create_directory_in_root(char *dirname)
     return 0;
 }
 
-static int open_entry_in_root(struct file_handle *handle, char *name, bool read_mode, bool is_file)
+static int open_entry_in_root(struct file_handle *handle, char *name, char mode, bool is_file)
 {
     uint16_t entry_index;
     struct dir_entry entry;
@@ -205,15 +205,15 @@ static int open_entry_in_root(struct file_handle *handle, char *name, bool read_
     if (is_file && entry.attribute & SUBDIR)
         return -1;
 
-    if (entry.attribute & READ_ONLY && read_mode != READ_MODE)
+    if (entry.attribute & READ_ONLY && mode != 'r')
         return -1;
 
     memcpy(handle->filename, name, sizeof(handle->filename));
-    handle->read_mode = read_mode;
+    handle->mode = mode;
 
     handle->cluster = entry.starting_cluster;
     handle->offset = 0;
-    if (read_mode == WRITE_MODE)
+    if (mode == 'w')
         handle->remaining_bytes = 0;
     else
         handle->remaining_bytes = entry.size;
@@ -221,14 +221,14 @@ static int open_entry_in_root(struct file_handle *handle, char *name, bool read_
     return 0;
 }
 
-int open_file_in_root(struct file_handle *handle, char *filename, bool read_mode)
+int open_file_in_root(struct file_handle *handle, char *filename, char mode)
 {
-    return open_entry_in_root(handle, filename, read_mode, true);
+    return open_entry_in_root(handle, filename, mode, true);
 }
 
 int open_directory_in_root(struct file_handle *handle, char *dirname)
 {
-    return open_entry_in_root(handle, dirname, true, false);
+    return open_entry_in_root(handle, dirname, 'r', false);
 }
 
 int delete_file_in_root(char *filename)
