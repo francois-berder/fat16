@@ -6,18 +6,15 @@ The data folder contains images used to test the program.
 ## Features
 
 The driver can:
-   - create/delete file located in the root directory
    - list files in the root directory
-   - read to a file (file can be opened several times in reading mode)
-   - write to a file, its previous contents are erased. A file cannot be read while it is opened in write mode.
-
-This driver cannot:
+   - read to a file (a file can be opened several times in reading mode)
+   - write to a file: any previous contents are erased. A file cannot be read while it is opened in write mode.
+   - append to a file: similar to write mode but any previous content is preserved and writing happen at the end.
    - create/delete directories
-   - read/write/create/delete a file which is not in the root directory
-   - handle long names
 
-Hence, a maximum of 512 files can be handled by this driver on a FAT16 partition.
-Concerning names, they must respect the format described here: https://en.wikipedia.org/wiki/8.3_filename. Hence, all valid filenames can be stored as an array of char of length  13 characters (12 bytes for the filename and one byte for the null character).
+This driver cannot handle long names.
+
+Names of files and directories must respect the format described here: https://en.wikipedia.org/wiki/8.3_filename. Hence, all valid names can be stored as an array of char of length 13 characters (12 bytes for the filename and one byte for the null character).
 
 ## Build instructions
 
@@ -25,7 +22,8 @@ Concerning names, they must respect the format described here: https://en.wikipe
 $ cmake .
 $ make
 ```
-This creates a shared library libfat16_driver.so, then the test suite must be run as root:
+This creates a shared library ```libfat16_driver.so```.
+The test suite must be run as root:
 
 ```sh
 $ sudo ./run_test
