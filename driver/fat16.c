@@ -264,9 +264,10 @@ int fat16_open(const char *filepath, char mode)
 
     /*
      * To avoid bugs, we restrict opening the same file several times.
-     * If a file is opened in write mode, this file cannot be opened anymore.
+     * If a file is opened in write mode, this file cannot be opened anymore until
+     * is closed.
      * If a file is opened in read mode, this file cannot be opened later in write
-     * mode. Hence, a file cannot be opened several times in read mode.
+     * mode. Hence, a file can only be opened several times in read mode.
      */
     for (i = 0; i < HANDLE_COUNT; ++i) {
         if (handles[i].filename[0] == 0)
