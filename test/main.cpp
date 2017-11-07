@@ -71,12 +71,12 @@ int main()
     tests.push_back(new ReadLargeFileTest(SECTOR_SIZE+1));
     tests.push_back(new ReadLargeFileTest(2*SECTOR_SIZE+1));
     tests.push_back(new ReadLargeFileTest(10*SECTOR_SIZE+1));
-    tests.push_back(new LsTest(0));
-    tests.push_back(new LsTest(1));
-    tests.push_back(new LsTest(128));
-    tests.push_back(new LsTest(256));
-    tests.push_back(new LsTest(511));
-    tests.push_back(new LsTest(512));
+    tests.push_back(new LsTest("/", 0));
+    tests.push_back(new LsTest("/", 1));
+    tests.push_back(new LsTest("/", 128));
+    tests.push_back(new LsTest("/", 256));
+    tests.push_back(new LsTest("/", 511));
+    tests.push_back(new LsTest("/", 512));
     tests.push_back(new MkdirTest());
 
     /* Ensure that we start with a clean image */

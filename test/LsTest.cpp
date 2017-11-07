@@ -30,8 +30,9 @@
 #include "linux_hal.h"
 
 
-LsTest::LsTest(unsigned int files_count):
-Test(std::string("LsTest (") + std::to_string(files_count) + std::string(")")),
+LsTest::LsTest(const std::string &dirpath, unsigned int files_count):
+Test(std::string("LsTest " + dirpath + " (") + std::to_string(files_count) + std::string(")")),
+m_dirpath(dirpath),
 m_files_count(files_count)
 {
 
@@ -41,9 +42,14 @@ void LsTest::init()
 {
     restore_image();
     mount_image();
+    {
+        std::stringstream ss;
+        ss << "mkdir -p /mnt/" << m_dirpath;
+        system(ss.str().c_str());
+    }
     for(unsigned int i = 0; i < m_files_count; ++i) {
         std::stringstream ss;
-        ss << "touch /mnt/" << i << ".TXT";
+        ss << "touch /mnt/" << m_dirpath << "/" << i << ".TXT";
         system(ss.str().c_str());
     }
     unmount_image();
@@ -63,14 +69,40 @@ bool LsTest::run()
 
     unsigned int files_count = 0;
     char filename[13];
-    uint16_t i = 0;
+    uint32_t i = 0;
     int ret = 0;
-    while((ret = fat16_ls(&i, filename)) == 0) {
-        ++files_count;
+    bool is_root = (m_dirpath == "/");
+    bool has_own_entry = false;
+    bool has_parent_entry = false;
+
+    while((ret = fat16_ls(&i, filename, m_dirpath.c_str())) == 1) {
         printf("Found file: %s\n", filename);
 
-        /* extract file name */
         std::string s(filename);
+        if (s == ".") {
+            /* Cannot have more than one own entry and this entry must not exist in root */
+            if (has_own_entry || is_root)
+                return false;
+
+            has_own_entry = true;
+
+            /* Skip filename validation */
+            continue;
+        }
+        if (s == "..") {
+            /* Cannot have more than one parent entry and this entry must not exist in root */
+            if (has_parent_entry || is_root)
+                return false;
+
+            has_parent_entry = true;
+
+            /* Skip filename validation */
+            continue;
+        }
+
+        ++files_count;
+
+        /* extract file name */
         size_t lastindex = s.find_last_of(".");
         std::string rawname = s.substr(0, lastindex);
         long index = std::stol(rawname);
@@ -83,7 +115,11 @@ bool LsTest::run()
         if (correct_filename != filename)
             return false;
     }
-    if (ret != -2)
+    if (ret != 0)
+        return false;
+
+    /* Check that a subdir has entries '.' and '..' */
+    if (!is_root && (!has_own_entry || !has_parent_entry))
         return false;
 
     for (unsigned int j = 0; j < file_exist.size(); ++j) {

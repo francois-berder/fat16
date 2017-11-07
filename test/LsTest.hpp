@@ -27,7 +27,7 @@ class LsTest : public Test
 {
     public :
 
-        LsTest(unsigned int files_count);
+        LsTest(const std::string &dirpath, unsigned int files_count);
 
         virtual void init() override;
         virtual bool run() override;
@@ -36,6 +36,7 @@ class LsTest : public Test
 
         void fill_root_directory();
 
+        const std::string m_dirpath;
         const unsigned int m_files_count;
 };
 
