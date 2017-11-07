@@ -306,3 +306,24 @@ int delete_directory_in_root(char *dirname)
 {
     return delete_entry_in_root(dirname, false);
 }
+
+int ls_in_root(uint32_t *index, char *filename)
+{
+    struct dir_entry entry;
+
+    if (*index == bpb.root_entry_count)
+        return 0;
+    else if (*index > bpb.root_entry_count)
+        return -1;
+
+    move_to_root_directory_region(*index);
+
+    dev.read(&entry, sizeof(entry));
+    if (entry.name[0] == 0)
+        return 0;
+
+    ++*index;
+    memcpy(filename, entry.name, sizeof(entry.name));
+
+    return 1;
+}

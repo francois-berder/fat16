@@ -94,4 +94,17 @@ int delete_directory_in_subdir(struct entry_handle *handle, char *dirname);
  */
 bool is_subdir_empty(struct entry_handle *handle);
 
+/**
+ * @brief
+ *
+ *
+ * @param[in|out] index
+ * @param[out] name
+ * @param[in] dirpath
+ * @retval 1
+ * @retval 0
+ * @retval -1
+ */
+int ls_in_subdir(uint32_t *index, char *name, struct entry_handle *handle);
+
 #endif

@@ -116,31 +116,29 @@ int fat16_close(uint8_t handle);
 int fat16_rm(const char *filepath);
 
 /**
- * @brief Gives the name of a file in the root directory.
+ * @brief Gives the name of a file in a directory.
  *
  * By repeatedly calling this function in this manner:
  *
  * @code{.c}
  * char filename[13];
- * uint16_t i = 0;
- * while(fat16_ls(&i, filename) == 0) {
+ * uint32_t i = 0;      // Must be initialised to 0
+ * while(fat16_ls(&i, filename, "/") == 1) {
  *      printf("%s\n", filename);
  * }
  * @endcode
  *
- * It is then possible to get the complete list of files in the root directory
- * without using too much memory.
+ * Do not modify the directory (creating/deleting files) while your are
+ * iterating through the list of files in this directory.
  *
- * @param[in/out] index Index of the entry to search for a file.
- * @param[out] filename Name in format:
- * <name> + '.' + <extension> + '\0'
- * name and extension are trimmed.
- * It is assumed that filename is at least 13 bytes long. The last byte is
- * always equal to zero.
- * @return a positive number if successful, -1 if an error occurs and -2 if
- * there are no more files in the root directory.
+ * @param[in/out] index Do not change the value of this variable between calls to fat16_ls
+ * @param[out] filename Name An array of 13 characters is sufficient
+ * @param[in] dirpath
+ * @retval 1 if a filename was retrieved with success
+ * @retval 0 if the end of the file list was reached
+ * @retval -1 if an error occurs
  */
-int fat16_ls(uint16_t *index, char *filename);
+int fat16_ls(uint32_t *index, char *filename, const char *dirpath);
 
 /**
  * @brief Create a directory

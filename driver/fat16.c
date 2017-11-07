@@ -407,72 +407,81 @@ int fat16_rm(const char *filepath)
     return 0;
 }
 
-int fat16_ls(uint16_t *index, char *filename)
+int fat16_ls(uint32_t *index, char *filename, const char *dirpath)
 {
-    uint8_t name_length = 0, ext_length = 0;
-    char fat_filename[11];
+    int ret;
+    char name[11];
 
-    if (*index > bpb.root_entry_count)
+    if (index == NULL || filename == NULL)
         return -1;
 
-    if (*index == bpb.root_entry_count)
-        return -2;
-
-    if (filename == NULL)
+    if (dirpath == NULL || dirpath[0] != '/')
         return -1;
 
-    fat_filename[0] = 0;
-    while (fat_filename[0] == 0
-           || ((uint8_t)fat_filename[0]) == AVAILABLE_DIR_ENTRY) {
-        uint8_t attribute = 0;
+    if (dirpath[1] == '\0') {
+        ret = ls_in_root(index, name);
+    } else {
+        struct entry_handle handle;
+        char dirname[11];
+
+        if (is_in_root(dirpath)) {
+            if (to_short_filename(dirname, dirpath) < 0)
+                return -1;
+
+            if (open_directory_in_root(&handle, dirname) < 0)
+                return -1;
+        } else {
+            if (navigate_to_subdir(&handle, dirname, dirpath) < 0
+            ||  open_directory_in_subdir(&handle, dirname) < 0)
+                return -1;
+        }
+
+        ret = ls_in_subdir(index, name, &handle);
+    }
+
+    if (ret == 1) {
+        uint8_t name_length = 0, ext_length = 0;
+
+        /* Special case for . and .. entries */
+        if (name[0] == '.' && name[1] == ' ') {
+            filename[0] = '.';
+            filename[1] = '\0';
+            return 1;
+        } else if (name[0] == '.' && name[1] == '.' && name[2] == ' ') {
+            filename[0] = '.';
+            filename[1] = '.';
+            filename[2] = '\0';
+            return 1;
+        }
 
         /*
-         * If this condition is true, the end of the root directory is reached.
-         * and there are no more files to be found.
+         * Reformat filename:
+         *   - Trim name
+         *   - Add '.' to separate name and extension
+         *   - Trim extension
+         *   - Add null terminated
          */
-        if (*index >= bpb.root_entry_count)
-            return -2;
+        for (name_length = 0; name_length < 8; ++name_length) {
+            char c = name[name_length];
+            if (c == ' ')
+                break;
 
-        move_to_root_directory_region((*index)++);
-        dev.read(fat_filename, 11);
-
-        /* Also reading attribute to skip any vfat entry. */
-        dev.read(&attribute, 1);
-        if ((attribute & VFAT_DIR_ENTRY) == VFAT_DIR_ENTRY) {
-            fat_filename[0] = 0;    /* Make sure that the condition of the loop
-                                     * remains true.
-                                     */
-            continue;
+            filename[name_length] = c;
         }
+
+        filename[name_length] = '.';
+
+        for (ext_length = 0; ext_length < 3; ++ext_length) {
+            char c = name[8 + ext_length];
+            if (c == ' ')
+                break;
+            filename[name_length + 1 + ext_length] = c;
+        }
+
+        filename[name_length + 1 + ext_length] = '\0';
     }
 
-    /*
-     * Reformat filename:
-     *   - Trim name
-     *   - Add '.' to separate name and extension
-     *   - Trim extension
-     *   - Add null terminated
-     */
-    for (name_length = 0; name_length < 8; ++name_length) {
-        char c = fat_filename[name_length];
-        if (c == ' ')
-            break;
-
-        filename[name_length] = c;
-    }
-
-    filename[name_length] = '.';
-
-    for (ext_length = 0; ext_length < 3; ++ext_length) {
-        char c = fat_filename[8 + ext_length];
-        if (c == ' ')
-            break;
-        filename[name_length + 1 + ext_length] = c;
-    }
-
-    filename[name_length + 1 + ext_length] = '\0';
-
-    return 0;
+    return ret;
 }
 
 int fat16_mkdir(const char *dirpath)

@@ -77,4 +77,6 @@ int delete_file_in_root(char *filename);
  */
 int delete_directory_in_root(char *dirname);
 
+int ls_in_root(uint32_t *index, char *filename);
+
 #endif

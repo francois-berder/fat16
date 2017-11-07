@@ -380,3 +380,27 @@ bool is_subdir_empty(struct entry_handle *handle)
 
     return is_empty;
 }
+
+int ls_in_subdir(uint32_t *index, char *name, struct entry_handle *handle)
+{
+    struct dir_entry entry;
+    uint32_t entry_index = *index;
+
+    while (entry_index) {
+        if (read_entry_from_subdir(&entry, handle) < 0)
+            return -1;
+
+        --entry_index;
+    }
+
+    if (read_entry_from_subdir(&entry, handle) < 0)
+        return -1;
+
+    if (entry.name[0] == 0)
+        return 0;
+
+    ++*index;
+    memcpy(name, entry.name, sizeof(entry.name));
+
+    return 1;
+}
