@@ -27,6 +27,7 @@
 #include "FilenameTest.hpp"
 #include "ReadEmptyFileTest.hpp"
 #include "ReadSmallFileTest.hpp"
+#include "RmdirTest.hpp"
 #include "WriteEraseContentTest.hpp"
 #include "WriteSmallFileTest.hpp"
 #include "WriteLargeFileTest.hpp"
@@ -85,6 +86,7 @@ int main()
     tests.push_back(new LsTest("/DATA", 2048));
     tests.push_back(new LsTest("/IMAGES/PNG", 2048));
     tests.push_back(new MkdirTest());
+    tests.push_back(new RmdirTest());
 
     /* Ensure that we start with a clean image */
     unmount_image();
