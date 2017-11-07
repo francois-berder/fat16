@@ -79,6 +79,11 @@ int main()
     tests.push_back(new LsTest("/", 256));
     tests.push_back(new LsTest("/", 511));
     tests.push_back(new LsTest("/", 512));
+    tests.push_back(new LsTest("/DATA", 0));
+    tests.push_back(new LsTest("/DATA", 1));
+    tests.push_back(new LsTest("/DATA", 512));
+    tests.push_back(new LsTest("/DATA", 2048));
+    tests.push_back(new LsTest("/IMAGES/PNG", 2048));
     tests.push_back(new MkdirTest());
 
     /* Ensure that we start with a clean image */
