@@ -6,7 +6,7 @@ The data folder contains images used to test the program.
 ## Features
 
 The driver can:
-   - list files in the root directory
+   - list files in a directory
    - read to a file (a file can be opened several times in reading mode)
    - write to a file: any previous contents are erased. A file cannot be read while it is opened in write mode.
    - append to a file: similar to write mode but any previous content is preserved and writing happen at the end.
