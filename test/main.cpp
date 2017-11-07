@@ -39,12 +39,14 @@
 
 #define SECTOR_SIZE (2048)
 
-static void print_pass_fail(bool result)
-{
-    if (result)
-        std::cout << "PASS" << std::endl;
-    else
-        std::cout << "FAIL" << std::endl;
+namespace {
+    void print_pass_fail(bool result)
+    {
+        if (result)
+            std::cout << "PASS" << std::endl;
+        else
+            std::cout << "FAIL" << std::endl;
+    }
 }
 
 int main()
