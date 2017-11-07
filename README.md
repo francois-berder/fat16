@@ -65,11 +65,9 @@ Listing files in root directory:
 void list_files(void)
 {
     char filename[13];
-    uint16_t i = 0;
-    while(i >= 0) {
-        i = fat16_ls(i, filename);
-        if (i >= 0)
-            printf("%s\n", filename);
+    uint32_t i = 0;
+    while(fat16_ls(i, filename, "/") == 1) {
+        printf("%s\n", filename);
     }
 }
 ```
