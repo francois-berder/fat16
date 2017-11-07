@@ -335,6 +335,14 @@ int fat16_read(uint8_t handle, void *buffer, uint32_t count)
         return -1;
     }
 
+    if (buffer == NULL) {
+        FAT16DBG("FAT16: fat16_read: Cannot read using null buffer.\n");
+        return -1;
+    }
+
+    if (count == 0)
+        return 0;
+
     return read_from_handle(&handles[handle], buffer, count);
 }
 
