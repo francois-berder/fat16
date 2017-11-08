@@ -160,13 +160,12 @@ int create_directory_in_root(char *dirname)
     if (find_root_directory_entry(&entry_index, dirname) < 0)
         return -1;
 
-    move_to_root_directory_region(entry_index);
+    pos = move_to_root_directory_region(entry_index);
     dev.read(&entry, sizeof(entry));
 
     if (allocate_cluster(&entry.starting_cluster, 0) < 0)
         return -1;
 
-    pos = move_to_root_directory_region(entry_index);
     pos += offsetof(struct dir_entry, starting_cluster);
     dev.seek(pos);
     dev.write(&entry.starting_cluster, sizeof(entry.starting_cluster));
@@ -215,9 +214,7 @@ static int open_entry_in_root(struct entry_handle *handle, char *name, char mode
     if (find_root_directory_entry(&entry_index, name) < 0)
         return -1;
 
-    handle->pos_entry = layout.start_root_directory_region;
-    handle->pos_entry += entry_index * 32;
-    dev.seek(handle->pos_entry);
+    handle->pos_entry = move_to_root_directory_region(entry_index);
     dev.read(&entry, sizeof(struct dir_entry));
 
     /* Check that we are opening a file and not something else */
@@ -272,16 +269,13 @@ int open_directory_in_root(struct entry_handle *handle, char *dirname)
 static int delete_entry_in_root(char *name, bool is_file)
 {
     uint16_t entry_index = 0;
-    uint32_t pos = 0;
     struct dir_entry entry;
 
     /* Find the entry in the root directory */
     if (find_root_directory_entry(&entry_index, name) < 0)
         return -1;
 
-    pos = layout.start_root_directory_region;
-    pos += entry_index * 32;
-    dev.seek(pos);
+    move_to_root_directory_region(entry_index);
     dev.read(&entry, sizeof(entry));
 
     /* Check that we are deleting an entry of the right type */
