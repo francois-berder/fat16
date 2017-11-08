@@ -66,7 +66,7 @@ void list_files(void)
 {
     char filename[13];
     uint32_t i = 0;
-    while(fat16_ls(i, filename, "/") == 1) {
+    while(fat16_ls(&i, filename, "/") == 1) {
         printf("%s\n", filename);
     }
 }
