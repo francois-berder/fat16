@@ -1,14 +1,11 @@
 dist: trusty
+sudo: required
 language: c
 before_install:
   - sudo apt update -yq
 install:
-  - sudo apt install cmake cppcheck
-env:
-  - BUILD_TYPE=Debug
-  - BUILD_TYPE=Release
+  - sudo apt install -yq cppcheck
 script:
-  - cppcheck -I driver/ --enable=all --inconclusive --platform=unix64 --std=c89 --error-exitcode=2 -f driver/
-  - cmake . -DCMAKE_BUILD_TYPE=${BUILD_TYPE}
-  - make VERBOSE=1
-  - if [ "${BUILD_TYPE}" = "Release" ]; then sudo ./run_test; fi
+  - cppcheck -I driver/ --enable=warning --enable=style --enable=performance --enable=portability --enable=information --enable=missingInclude --inconclusive --platform=unix64 --std=c89 --error-exitcode=2 -f driver/
+  - make
+  - sudo ./bin/run_test
