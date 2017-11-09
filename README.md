@@ -19,14 +19,13 @@ Names of files and directories must respect the format described here: https://e
 ## Build instructions
 
 ```sh
-$ cmake .
 $ make
 ```
-This creates a shared library ```libfat16_driver.so```.
+This creates a shared library ```libfat16_driver.so``` in the ```lib``` folder.
 The test suite must be run as root:
 
 ```sh
-$ sudo ./run_test
+$ sudo ./bin/run_test
 ```
 
 ## Examples
