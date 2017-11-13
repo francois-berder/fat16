@@ -54,7 +54,7 @@ struct storage_dev_t {
  * @param dev
  * @return 0 if successful, -1 otherwise
  */
-int fat16_init(struct storage_dev_t dev);
+int __attribute__((visibility("default"))) fat16_init(struct storage_dev_t dev);
 
 /**
  * @brief Open a file.
@@ -70,7 +70,7 @@ int fat16_init(struct storage_dev_t dev);
  * @return A handle of the file (positive integer) if it could open it.
  * Otherwise, a negative value is returned.
  */
-int fat16_open(const char *filepath, char mode);
+int __attribute__((visibility("default"))) fat16_open(const char *filepath, char mode);
 
 /**
  * @brief Read data from file.
@@ -84,7 +84,7 @@ int fat16_open(const char *filepath, char mode);
  * @return Number of bytes read from file. The return value might be less than
  * count because the end of the file is reached.
  */
-int fat16_read(uint8_t handle, void *buffer, uint32_t count);
+int __attribute__((visibility("default"))) fat16_read(uint8_t handle, void *buffer, uint32_t count);
 
 /**
  * @brief Write data to file.
@@ -95,7 +95,7 @@ int fat16_read(uint8_t handle, void *buffer, uint32_t count);
  * @return Number of bytes written to file. The return value might be less than
  * count if there is no space left.
  */
-int fat16_write(uint8_t handle, const void *buffer, uint32_t count);
+int __attribute__((visibility("default"))) fat16_write(uint8_t handle, const void *buffer, uint32_t count);
 
 /**
  * @brief Release the handle.
@@ -103,7 +103,7 @@ int fat16_write(uint8_t handle, const void *buffer, uint32_t count);
  * @param[in] handle Positive number returned by fat16_open
  * @return 0 if successful, -1 otherwise
  */
-int fat16_close(uint8_t handle);
+int __attribute__((visibility("default"))) fat16_close(uint8_t handle);
 
 /**
  * @brief Delete a file.
@@ -113,7 +113,7 @@ int fat16_close(uint8_t handle);
  * @param[in] filepath
  * @return 0 if successful, -1 otherwise
  */
-int fat16_rm(const char *filepath);
+int __attribute__((visibility("default"))) fat16_rm(const char *filepath);
 
 /**
  * @brief Gives the name of a file in a directory.
@@ -138,7 +138,7 @@ int fat16_rm(const char *filepath);
  * @retval 0 if the end of the file list was reached
  * @retval -1 if an error occurs
  */
-int fat16_ls(uint32_t *index, char *filename, const char *dirpath);
+int __attribute__((visibility("default"))) fat16_ls(uint32_t *index, char *filename, const char *dirpath);
 
 /**
  * @brief Create a directory
@@ -146,7 +146,7 @@ int fat16_ls(uint32_t *index, char *filename, const char *dirpath);
  * @param[in] dirpath
  * @return 0 if successful, -1 otherwise
  */
-int fat16_mkdir(const char *dirpath);
+int __attribute__((visibility("default"))) fat16_mkdir(const char *dirpath);
 
 /**
  * @brief Delete a directory
@@ -156,7 +156,7 @@ int fat16_mkdir(const char *dirpath);
  * @param[in] dirpath
  * @return 0 if successful, -1 otherwise
  */
-int fat16_rmdir(const char *dirpath);
+int __attribute__((visibility("default"))) fat16_rmdir(const char *dirpath);
 
 #ifdef __cplusplus
 }

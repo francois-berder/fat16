@@ -10,7 +10,7 @@ LIB_DIR ?= lib
 BUILD_DIR ?= build
 DEP_DIR ?= $(BUILD_DIR)/dep
 
-CFLAGS := -Wall -Wextra -Werror -DNDEBUG -std=c89
+CFLAGS := -Wall -Wextra -Werror -DNDEBUG -std=c89 -fvisibility=hidden
 CXXFLAGS := -Wall -Wextra -Werror -std=c++11
 DEPFLAGS = -MMD -MP -MF $(@:$(BUILD_DIR)/%.o=$(DEP_DIR)/%.d)
 
