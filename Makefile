@@ -65,7 +65,7 @@ $(BUILD_DIR)/%.o: %.c
 $(BUILD_DIR)/%.o: %.cpp
 	@$(MKDIR) $(BUILD_DIR)/test
 	@$(MKDIR) $(DEP_DIR)/test
-	$(CXX) $(CXXFLAGS) -c $(realpath $<) -o $@
+	$(CXX) $(DEPFLAGS) $(CXXFLAGS) -c $(realpath $<) -o $@
 
 .PHONY: clean
 clean:
