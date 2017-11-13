@@ -1,5 +1,7 @@
 CC = $(PREFIX)gcc
 CXX = $(PREFIX)g++
+AR = $(PREFIX)ar
+RANLIB = $(PREFIX)ranlib
 RM := rm -rf
 MKDIR := mkdir -p
 
@@ -41,10 +43,14 @@ TEST_OBJS := $(TEST_SRCS:%.cpp=$(BUILD_DIR)/%.o)
 TEST_DEPS := $(TEST_OBJS:$(BUILD_DIR)/%.o=$(DEP_DIR)/%.d)
 
 .PHONY: all
-all: driver test
+all: dynamic static test
 
-.PHONY: driver
-driver: $(LIB_DIR)/libfat16.so
+.PHONY: dynamic
+dynamic: $(LIB_DIR)/libfat16.so
+dynamic: CFLAGS += -fPIC
+
+.PHONY: static
+static: $(LIB_DIR)/libfat16.a
 
 .PHONY: test
 test: $(BIN_DIR)/run_test
@@ -53,6 +59,11 @@ $(LIB_DIR)/libfat16.so: $(DRIVER_OBJS)
 	@$(MKDIR) $(LIB_DIR)
 	$(CC) -shared -o $@ $(DRIVER_OBJS)
 
+$(LIB_DIR)/libfat16.a: $(DRIVER_OBJS)
+	@$(MKDIR) $(LIB_DIR)
+	$(AR) rc $@ $(DRIVER_OBJS)
+	$(RANLIB) $@
+
 $(BIN_DIR)/run_test: $(LIB_DIR)/libfat16.so $(TEST_OBJS)
 	@$(MKDIR) $(BIN_DIR)
 	$(CXX) -o $@ $(TEST_OBJS) -Wl,-rpath $(LIB_DIR) -L $(LIB_DIR) -lfat16
@@ -60,7 +71,7 @@ $(BIN_DIR)/run_test: $(LIB_DIR)/libfat16.so $(TEST_OBJS)
 $(BUILD_DIR)/%.o: %.c
 	@$(MKDIR) $(BUILD_DIR)/driver
 	@$(MKDIR) $(DEP_DIR)/driver
-	$(CC) $(DEPFLAGS) $(CFLAGS) -c -fPIC $(realpath $<) -o $@
+	$(CC) $(DEPFLAGS) $(CFLAGS) -c $(realpath $<) -o $@
 
 $(BUILD_DIR)/%.o: %.cpp
 	@$(MKDIR) $(BUILD_DIR)/test
