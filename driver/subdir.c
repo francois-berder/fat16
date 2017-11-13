@@ -269,7 +269,7 @@ static int open_entry_in_subdir(struct entry_handle *handle, char *name, char mo
         return -1;
 
     /* Check that we are opening a file or directory and not something else */
-    if (entry.attribute & VOLUME || entry.attribute & SYSTEM)
+    if (entry.attribute & VOLUME)
         return -1;
 
     if (is_file && entry.attribute & SUBDIR)
@@ -328,7 +328,7 @@ static int delete_entry_in_subdir(struct entry_handle *handle, char *name, bool 
         return -1;
 
     /* Check that we are deleting an entry of the right type */
-    if (entry.attribute & VOLUME ||  entry.attribute & SYSTEM)
+    if (entry.attribute & VOLUME)
         return -1;
     if ((is_file && (entry.attribute & SUBDIR))
     ||  (!is_file && !(entry.attribute & SUBDIR)))

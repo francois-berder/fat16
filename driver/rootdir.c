@@ -218,8 +218,7 @@ static int open_entry_in_root(struct entry_handle *handle, char *name, char mode
     dev.read(&entry, sizeof(struct dir_entry));
 
     /* Check that we are opening a file and not something else */
-    if (entry.attribute & VOLUME
-    ||  entry.attribute & SYSTEM)
+    if (entry.attribute & VOLUME)
         return -1;
     if (is_file && entry.attribute & SUBDIR)
         return -1;
@@ -279,8 +278,8 @@ static int delete_entry_in_root(char *name, bool is_file)
     dev.read(&entry, sizeof(entry));
 
     /* Check that we are deleting an entry of the right type */
-    if (entry.attribute & VOLUME ||  entry.attribute & SYSTEM)
-    return -1;
+    if (entry.attribute & VOLUME)
+        return -1;
     if ((is_file && (entry.attribute & SUBDIR))
     ||  (!is_file && !(entry.attribute & SUBDIR)))
         return -1;
