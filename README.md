@@ -28,6 +28,22 @@ The test suite must be run as root:
 $ sudo ./bin/run_test
 ```
 
+## Integration in an application
+
+You will need to implement the following functions to construct a ```struct storage_dev_t```:
+```
+    int (*read)(void *buffer, uint32_t length);
+    int (*read_byte)(void *data);
+    int (*write)(const void *buffer, uint32_t length);
+    int (*seek)(uint32_t offset);
+```
+
+You will also need to find out where the fat16 partition starts. If it is a FAT16 image, the address is most likely 0. Otherwise, read the MBR to get the first sector of a FAT16 partition, multiplied by 512 (bytes per sector) and pass it to ```fat16_init```.
+
+
+On some compilers such as Microchip XC16, some features from C99 such as printing ```uint32_t``` are not supported
+so you may have to change the format in debug print.
+
 ## Examples
 
 Printing content of a file:
