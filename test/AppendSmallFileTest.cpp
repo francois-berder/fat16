@@ -44,7 +44,7 @@ void AppendSmallFileTest::init()
 
 bool AppendSmallFileTest::run()
 {
-    if (fat16_init(linux_dev) < 0)
+    if (fat16_init(linux_dev, 0) < 0)
         return false;
 
     std::string existing_content = "Hello, World !";

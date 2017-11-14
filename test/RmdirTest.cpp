@@ -40,7 +40,7 @@ void RmdirTest::init()
 
 bool RmdirTest::run()
 {
-    if (fat16_init(linux_dev) < 0)
+    if (fat16_init(linux_dev, 0) < 0)
         return false;
 
     if (fat16_rmdir("/TEST") == 0)

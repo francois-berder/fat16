@@ -59,7 +59,7 @@ void LsTest::init()
 
 bool LsTest::run()
 {
-    if (fat16_init(linux_dev) < 0)
+    if (fat16_init(linux_dev, 0) < 0)
         return false;
 
     std::vector<bool> file_exist;

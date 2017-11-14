@@ -42,7 +42,7 @@ void WriteSmallFileTest::init()
 
 bool WriteSmallFileTest::run()
 {
-    if (fat16_init(linux_dev) < 0)
+    if (fat16_init(linux_dev, 0) < 0)
         return false;
 
     {

@@ -44,7 +44,7 @@ void ReadEmptyFileTest::init()
 
 bool ReadEmptyFileTest::run()
 {
-    if (fat16_init(linux_dev) < 0)
+    if (fat16_init(linux_dev, 0) < 0)
         return false;
 
     int fd = fat16_open("HELLO.TXT", 'r');

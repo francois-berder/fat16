@@ -45,7 +45,7 @@ Test("FilenameTest")
 
 bool FilenameTest::run()
 {
-    if (fat16_init(linux_dev) < 0)
+    if (fat16_init(linux_dev, 0) < 0)
         return false;
 
     CHECK_NAME("/DATA", true);

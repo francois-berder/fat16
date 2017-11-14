@@ -45,7 +45,7 @@ void ReadLargeFileTest::init()
 
 bool ReadLargeFileTest::run()
 {
-    if (fat16_init(linux_dev) < 0)
+    if (fat16_init(linux_dev, 0) < 0)
         return false;
 
     {
