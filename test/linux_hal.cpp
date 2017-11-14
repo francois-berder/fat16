@@ -82,7 +82,7 @@ int linux_read_byte(void *data)
     return 0;
 }
 
-int linux_seek(int offset)
+int linux_seek(uint32_t offset)
 {
     return fseek(image, offset, SEEK_SET);
 }

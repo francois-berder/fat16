@@ -42,7 +42,7 @@ struct storage_dev_t {
     int (*read)(void *buffer, uint32_t length);
     int (*read_byte)(void *data);
     int (*write)(const void *buffer, uint32_t length);
-    int (*seek)(int offset);
+    int (*seek)(uint32_t offset);
 };
 
 /**
