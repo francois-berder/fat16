@@ -51,10 +51,12 @@ struct storage_dev_t {
  * It reads the BPB, initialises internal variables.
  * It must be called before doing any other operations.
  *
- * @param dev
+ * @param[in] dev
+ * @param[in] offset Absolute position of the first byte which belongs to a FAT16 partition
+ *                   (obtained by reading the MBR, can be 0 if reading from a FAT16 image).
  * @return 0 if successful, -1 otherwise
  */
-int __attribute__((visibility("default"))) fat16_init(struct storage_dev_t dev);
+int __attribute__((visibility("default"))) fat16_init(struct storage_dev_t dev, uint32_t offset);
 
 /**
  * @brief Open a file.

@@ -64,6 +64,7 @@ uint32_t move_to_data_region(uint16_t cluster, uint16_t offset)
     tmp *= bpb.sectors_per_cluster;
     tmp *= bpb.bytes_per_sector;
     uint32_t pos = layout.start_data_region;
+    pos += layout.offset;
     pos += tmp;
     pos += offset;
     FAT16DBG("FAT16: Moving to %08X\n", pos);
@@ -74,7 +75,7 @@ uint32_t move_to_data_region(uint16_t cluster, uint16_t offset)
 uint32_t move_to_root_directory_region(uint16_t entry_index)
 {
     uint32_t pos = layout.start_root_directory_region;
-
+    pos += layout.offset;
     pos += entry_index * 32;
     FAT16DBG("FAT16: Moving to %08X\n", pos);
     dev.seek(pos);
@@ -84,7 +85,7 @@ uint32_t move_to_root_directory_region(uint16_t entry_index)
 uint32_t move_to_fat_region(uint16_t cluster)
 {
     uint32_t pos = layout.start_fat_region;
-
+    pos += layout.offset;
     pos += cluster * 2;
     FAT16DBG("FAT16: Moving to %08X\n", pos);
     dev.seek(pos);

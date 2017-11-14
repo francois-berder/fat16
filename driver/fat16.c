@@ -46,6 +46,8 @@ static int fat16_read_bpb(void)
 
     memset(&bpb, 0, sizeof(struct fat16_bpb));
 
+    dev.seek(layout.offset);
+
     /* Parse boot sector */
     FAT16DBG("FAT16: #######   BPB   #######\n");
     /*
@@ -182,11 +184,12 @@ static bool check_handle(uint8_t handle)
     return true;
 }
 
-int fat16_init(struct storage_dev_t _dev)
+int fat16_init(struct storage_dev_t _dev, uint32_t offset)
 {
     uint32_t data_sector_count, root_directory_sector_count;
 
     dev = _dev;
+    layout.offset = offset;
     int ret = fat16_read_bpb();
 
     if (ret < 0)

@@ -31,6 +31,7 @@
 
 
 struct fat16_layout {
+    uint32_t offset;                        /**< offset in bytes of the FAT16 partition */
     uint32_t start_fat_region;              /**< offset in bytes of first FAT */
     uint32_t start_root_directory_region;   /**< offset in bytes of root directory */
     uint32_t start_data_region;             /**< offset in bytes of data region */

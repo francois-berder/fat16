@@ -33,8 +33,7 @@ extern struct fat16_bpb bpb;
 static int find_available_entry_in_root_directory(uint16_t *entry_index)
 {
     uint16_t i = 0;
-    uint32_t pos = layout.start_root_directory_region;
-    dev.seek(pos);
+    uint32_t pos = move_to_root_directory_region(0);
 
     do {
         uint8_t tmp;
