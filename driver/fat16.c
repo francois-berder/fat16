@@ -206,10 +206,15 @@ int fat16_init(struct storage_dev_t _dev, uint32_t offset)
         || layout.data_cluster_count >= 65525)
         return -INVALID_FAT_TYPE;
 
-    layout.start_fat_region = bpb.reversed_sector_count * bpb.bytes_per_sector;
-    layout.start_root_directory_region = layout.start_fat_region + (bpb.num_fats * bpb.fat_size) * bpb.bytes_per_sector;
-    layout.start_data_region = layout.start_root_directory_region + (root_directory_sector_count * bpb.bytes_per_sector);
-
+    layout.start_fat_region = bpb.reversed_sector_count;
+    layout.start_fat_region *= bpb.bytes_per_sector;
+    layout.start_root_directory_region = bpb.num_fats;
+    layout.start_root_directory_region *= bpb.fat_size;
+    layout.start_root_directory_region *= bpb.bytes_per_sector;
+    layout.start_root_directory_region += layout.start_fat_region;
+    layout.start_data_region = root_directory_sector_count;
+    layout.start_data_region *= bpb.bytes_per_sector;
+    layout.start_data_region += layout.start_root_directory_region;
     FAT16DBG("FAT16: file system layout:\n");
     FAT16DBG("\tstart_fat_region=%08X\n", layout.start_fat_region);
     FAT16DBG("\tstart_root_directory_region=%08X\n", layout.start_root_directory_region);
