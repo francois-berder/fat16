@@ -50,7 +50,7 @@ static bool is_character_valid(char c)
 int to_short_filename(char *short_filename, const char *long_filename)
 {
     uint8_t i = 0;
-    uint8_t sep;
+    uint8_t sep = 0;
 
     if (long_filename[0] == '/')
         ++long_filename;
