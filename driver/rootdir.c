@@ -100,7 +100,7 @@ static int find_root_directory_entry(uint16_t *entry_index, char *name)
 
         /* Do not allow filename to start with a NULL character */
         if (e.name[0] == 0)
-            continue;
+            break;
 
         /* Ignore any VFAT entry */
         if ((e.attribute & VFAT_DIR_ENTRY) == VFAT_DIR_ENTRY)
