@@ -165,7 +165,7 @@ int write_from_handle(struct entry_handle *handle, const void *buffer, uint32_t 
  * @param[out] handle
  * @param[out] entry_name 8.3 short name
  * @param[in] path
- * @return 0 if succesful, -1 otherwise
+ * @return 0 if successful, -1 otherwise
  */
 int navigate_to_subdir(struct entry_handle *handle, char *entry_name, const char *path);
 
