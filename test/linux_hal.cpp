@@ -67,19 +67,9 @@ int linux_read(void *buffer, uint32_t length)
     return 0;
 }
 
-int linux_read_byte(void *data)
+int linux_read_byte(void *buffer)
 {
-    if (data == NULL) {
-        printf("linux_read: Cannot read with null buffer\n");
-        return -1;
-    }
-
-    if (fread(data, 1, 1, image) != 1) {
-        printf("linux_read: Error while reading one byte\n");
-        return -1;
-    }
-
-    return 0;
+    return linux_read(buffer,1);
 }
 
 int linux_seek(uint32_t offset)
