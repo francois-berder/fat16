@@ -201,6 +201,7 @@ int create_directory_in_subdir(struct entry_handle *handle, char *dirname)
     struct dir_entry entry;
     uint32_t entry_pos;
     uint32_t parent_dir_starting_cluster = handle->cluster;
+    uint16_t starting_cluster;
 
     /* Do not allow muliple entries with same name */
     if (find_entry_in_subdir(&entry, NULL, handle, dirname) == 0)
@@ -215,9 +216,10 @@ int create_directory_in_subdir(struct entry_handle *handle, char *dirname)
     memset(entry.reserved, 0, sizeof(entry.reserved));
     memset(entry.time, 0, sizeof(entry.time));
     memset(entry.date, 0, sizeof(entry.date));
-    if (allocate_cluster(&entry.starting_cluster, 0) < 0) {
+    if (allocate_cluster(&starting_cluster, 0) < 0) {
         return -1;
     }
+    entry.starting_cluster = starting_cluster;
     entry.size = 0;
     dev.seek(entry_pos);
     dev.write(&entry, sizeof(entry));

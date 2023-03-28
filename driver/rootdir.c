@@ -151,6 +151,7 @@ int create_directory_in_root(char *dirname)
 {
     struct dir_entry entry;
     uint16_t entry_index;
+    uint16_t starting_cluster;
     uint32_t pos;
 
     if (create_entry_in_root(dirname, SUBDIR) < 0)
@@ -162,9 +163,10 @@ int create_directory_in_root(char *dirname)
     pos = move_to_root_directory_region(entry_index);
     dev.read(&entry, sizeof(entry));
 
-    if (allocate_cluster(&entry.starting_cluster, 0) < 0)
+    if (allocate_cluster(&starting_cluster, 0) < 0)
         return -1;
 
+    entry.starting_cluster = starting_cluster;
     pos += offsetof(struct dir_entry, starting_cluster);
     dev.seek(pos);
     dev.write(&entry.starting_cluster, sizeof(entry.starting_cluster));
