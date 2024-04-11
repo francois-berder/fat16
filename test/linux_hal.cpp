@@ -67,6 +67,8 @@ int linux_read(void *buffer, uint32_t length)
     if (length == 0)
         return 0;
 
+    fsync(fileno(image));
+
     if (fread(buffer, sizeof(uint8_t), length, image) != length) {
         printf("linux_read: Error while reading %u bytes\n", length);
         return -1;
@@ -100,7 +102,9 @@ int linux_write(const void *buffer, uint32_t length)
         return -1;
     }
 
-    return fflush(image);
+    fsync(fileno(image));
+
+    return 0;
 }
 
 struct storage_dev_t linux_dev = {
