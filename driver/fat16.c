@@ -93,15 +93,15 @@ static int fat16_read_bpb(void)
     if (bpb.bytes_per_sector * bpb.sectors_per_cluster > MAX_BYTES_PER_CLUSTER)
         return -INVALID_BYTES_PER_CLUSTER;
 
-    dev.read(&bpb.reversed_sector_count, 2);
+    dev.read(&bpb.reversed_sector_count, sizeof(bpb.reversed_sector_count));
     FAT16DBG("FAT16: reserved sector count: %u\n", bpb.reversed_sector_count);
     if (bpb.reversed_sector_count != 1)
         return -INVALID_RESERVED_SECTOR_COUNT;
 
-    dev.read(&bpb.num_fats, 1);
+    dev.read(&bpb.num_fats, sizeof(bpb.num_fats));
     FAT16DBG("FAT16: num fats: %u\n", bpb.num_fats);
 
-    dev.read(&bpb.root_entry_count, 2);
+    dev.read(&bpb.root_entry_count, sizeof(bpb.root_entry_count));
     FAT16DBG("FAT16: root entry count: %u\n", bpb.root_entry_count);
     if ((((32 * bpb.root_entry_count) / bpb.bytes_per_sector) & 0x1) != 0)
         return -INVALID_ROOT_ENTRY_COUNT;
@@ -112,7 +112,7 @@ static int fat16_read_bpb(void)
     /* Skip media */
     dev.read_byte(&data);
 
-    dev.read(&bpb.fat_size, 2);
+    dev.read(&bpb.fat_size, sizeof(bpb.fat_size));
     FAT16DBG("FAT16: fat size: %u\n", bpb.fat_size);
 
     /* Skip sector per track for int 0x13 */
