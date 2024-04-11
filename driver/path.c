@@ -127,7 +127,7 @@ int get_subdir(char *subdir_name, uint16_t *index, const char *path)
     if (path[beg + len] != '/')
         return -2;
 
-    if (len > 12)
+    if (len > MAX_FILENAME_LEN)
         return -1;
 
     memcpy(subdir_name, &path[beg], len);
@@ -139,7 +139,7 @@ int get_subdir(char *subdir_name, uint16_t *index, const char *path)
 
 bool is_in_root(const char *path)
 {
-    char subdir_name[13];
+    char subdir_name[MAX_FILENAME_LEN + 1];
     uint16_t index = 0;
 
     return get_subdir(subdir_name, &index, path) < 0;

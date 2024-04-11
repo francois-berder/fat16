@@ -23,6 +23,8 @@
 
 #include <stdbool.h>
 
+#define MAX_FILENAME_LEN    (12)
+
 /**
  * @brief Convert filename to 8.3 FAT short name.
  *
