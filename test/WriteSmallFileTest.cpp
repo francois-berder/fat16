@@ -86,6 +86,7 @@ bool WriteSmallFileTest::check_content_file(const std::string &filename, const s
 {
     bool result = true;
 
+    load_image();
     mount_image();
 
     std::string path = "/mnt/";

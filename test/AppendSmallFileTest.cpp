@@ -118,6 +118,7 @@ bool AppendSmallFileTest::check_content_file(const std::string &filename,
 {
     bool result = true;
 
+    load_image();
     mount_image();
 
     std::string path = "/mnt/";

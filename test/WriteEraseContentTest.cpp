@@ -73,6 +73,7 @@ bool WriteEraseContentTest::run()
 bool WriteEraseContentTest::check_file_is_empty(const std::string &filepath)
 {
     bool result = true;
+    load_image();
     mount_image();
     std::string path = "/mnt/" + filepath;
     std::ifstream file(path, std::ifstream::ate | std::ifstream::binary);

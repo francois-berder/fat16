@@ -19,6 +19,7 @@
 
 
 #include <stdio.h>
+#include <unistd.h>
 #include "linux_hal.h"
 
 static FILE *image = NULL;
@@ -28,6 +29,11 @@ int linux_load_image(const char *path)
     if (path == NULL) {
         printf("linux_load_image: Cannot load image with null path\n");
         return -1;
+    }
+
+    if (image != NULL) {
+        fclose(image);
+        image = NULL;
     }
 
     if ((image = fopen(path, "r+")) == NULL) {
@@ -45,6 +51,8 @@ int linux_release_image(void)
 
     if (fclose(image) == EOF)
         return -1;
+
+    image = NULL;
 
     return 0;
 }
